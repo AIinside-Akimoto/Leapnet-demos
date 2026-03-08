@@ -215,11 +215,11 @@ export default function AdminPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/portal")}
+            onClick={() => router.push("/dashboard")}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            ポータルに戻る
+            ダッシュボードに戻る
           </Button>
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
