@@ -66,7 +66,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (sessionLoading) return
-    if (!session?.authenticated) {
+    // Check if token exists in sessionStorage as a fallback
+    const hasToken = typeof window !== "undefined" && sessionStorage.getItem("auth_token")
+    if (!session?.authenticated && !hasToken) {
       router.push("/")
     }
   }, [session, sessionLoading, router])
@@ -76,7 +78,18 @@ export default function DashboardPage() {
     router.push("/")
   }
 
-  if (sessionLoading || !session?.authenticated) {
+  // Show loading while checking auth
+  const hasToken = typeof window !== "undefined" && sessionStorage.getItem("auth_token")
+  if (sessionLoading || (!session?.authenticated && hasToken)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // If no session and no token, the useEffect will redirect
+  if (!session?.authenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
