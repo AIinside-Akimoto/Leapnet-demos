@@ -1,6 +1,6 @@
 "use client"
 
-import { Building2, CalendarDays, Coins, Handshake, UserPlus, Gift, LogOut, Shield, ChevronRight } from "lucide-react"
+import { Building2, CalendarDays, Coins, Handshake, UserPlus, Gift, LogOut, Shield, ChevronRight, Home } from "lucide-react"
 import { type AgentKey, AGENTS, AGENT_KEYS } from "@/lib/agents"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +20,7 @@ interface PortalSidebarProps {
   isAdmin: boolean
   onLogout: () => void
   onAdminClick?: () => void
+  onDashboardClick?: () => void
 }
 
 export function PortalSidebar({
@@ -29,6 +30,7 @@ export function PortalSidebar({
   isAdmin,
   onLogout,
   onAdminClick,
+  onDashboardClick,
 }: PortalSidebarProps) {
   return (
     <aside className="flex h-full w-72 flex-col bg-sidebar text-sidebar-foreground">
@@ -73,6 +75,15 @@ export function PortalSidebar({
       </nav>
 
       <div className="border-t border-sidebar-border px-3 py-3 space-y-1">
+        {onDashboardClick && (
+          <button
+            onClick={onDashboardClick}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <Home className="h-4 w-4" />
+            <span>ダッシュボードに戻る</span>
+          </button>
+        )}
         {isAdmin && onAdminClick && (
           <button
             onClick={onAdminClick}

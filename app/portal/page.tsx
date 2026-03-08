@@ -103,6 +103,7 @@ export default function PortalPage() {
           isAdmin={session.isAdmin}
           onLogout={handleLogout}
           onAdminClick={session.isAdmin ? () => router.push("/admin") : undefined}
+          onDashboardClick={() => router.push("/dashboard")}
         />
       </div>
 

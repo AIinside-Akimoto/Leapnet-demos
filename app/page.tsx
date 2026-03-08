@@ -16,10 +16,10 @@ export default function LoginPage() {
   const router = useRouter()
   const { session, sessionLoading, login } = useAuth()
 
-  // If already logged in, redirect to portal
+  // If already logged in, redirect to dashboard
   useEffect(() => {
     if (!sessionLoading && session?.authenticated) {
-      router.push("/portal")
+      router.push("/dashboard")
     }
   }, [session, sessionLoading, router])
 
@@ -43,8 +43,8 @@ export default function LoginPage() {
       // Store token and wait for session to be verified
       await login(data.token)
 
-      // Always go to portal (admin can access management from sidebar)
-      router.push("/portal")
+      // Go to dashboard after login
+      router.push("/dashboard")
     } catch {
       setError("通信エラーが発生しました")
     } finally {
@@ -78,10 +78,10 @@ export default function LoginPage() {
             <Building2 className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground text-balance">
-            社内AIエージェントポータル
+            AIエージェント デモポータル
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            ログインして業務支援AIをご利用ください
+            ログインしてAIエージェントデモをご利用ください
           </p>
         </div>
 
