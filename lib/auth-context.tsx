@@ -20,15 +20,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return sessionStorage.getItem("auth_token")
-    }
-    return null
-  })
+  const [token, setToken] = useState<string | null>(null)
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
-  const initialized = useRef(false)
 
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
@@ -43,21 +37,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const checkSession = useCallback(async (t: string): Promise<boolean> => {
+    console.log("[v0] checkSession called")
     try {
       const res = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${t}` },
       })
+      console.log("[v0] checkSession response:", res.status)
       if (res.ok) {
         const data = await res.json()
+        console.log("[v0] checkSession success:", data.username)
         setSession(data)
         return true
       } else {
+        console.log("[v0] checkSession failed - clearing token")
         sessionStorage.removeItem("auth_token")
         setToken(null)
         setSession(null)
         return false
       }
-    } catch {
+    } catch (err) {
+      console.log("[v0] checkSession error:", err)
       sessionStorage.removeItem("auth_token")
       setToken(null)
       setSession(null)
@@ -68,11 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // Prevent double initialization in strict mode
-    if (initialized.current) return
-    initialized.current = true
-    
     const stored = sessionStorage.getItem("auth_token")
+    console.log("[v0] AuthProvider init - stored token:", !!stored)
     if (stored) {
       setToken(stored)
       checkSession(stored)
