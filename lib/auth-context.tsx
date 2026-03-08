@@ -37,26 +37,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const checkSession = useCallback(async (t: string): Promise<boolean> => {
-    console.log("[v0] checkSession called with token:", t?.substring(0, 10) + "...")
     try {
       const res = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${t}` },
       })
-      console.log("[v0] checkSession response status:", res.status)
       if (res.ok) {
         const data = await res.json()
-        console.log("[v0] checkSession success, user:", data.username)
         setSession(data)
         return true
       } else {
-        console.log("[v0] checkSession failed, clearing token")
         sessionStorage.removeItem("auth_token")
         setToken(null)
         setSession(null)
         return false
       }
-    } catch (err) {
-      console.log("[v0] checkSession error:", err)
+    } catch {
       sessionStorage.removeItem("auth_token")
       setToken(null)
       setSession(null)
@@ -67,26 +62,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    console.log("[v0] AuthProvider useEffect running")
     const stored = sessionStorage.getItem("auth_token")
-    console.log("[v0] Stored token exists:", !!stored)
     if (stored) {
       setToken(stored)
       checkSession(stored)
     } else {
-      console.log("[v0] No stored token, setting sessionLoading to false")
       setSessionLoading(false)
     }
   }, [checkSession])
 
   const login = useCallback(
     async (newToken: string): Promise<boolean> => {
-      console.log("[v0] login called, saving token")
       sessionStorage.setItem("auth_token", newToken)
       setToken(newToken)
-      const result = await checkSession(newToken)
-      console.log("[v0] login checkSession result:", result)
-      return result
+      return await checkSession(newToken)
     },
     [checkSession]
   )

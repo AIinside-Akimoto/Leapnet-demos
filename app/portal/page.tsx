@@ -21,13 +21,12 @@ export default function PortalPage() {
   const [loading, setLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Temporarily disabled auth check for debugging
-  // useEffect(() => {
-  //   if (sessionLoading) return
-  //   if (!session?.authenticated) {
-  //     router.push("/")
-  //   }
-  // }, [session, sessionLoading, router])
+  useEffect(() => {
+    // Only redirect if we're done loading AND not authenticated
+    if (!sessionLoading && !session?.authenticated) {
+      router.push("/")
+    }
+  }, [session, sessionLoading, router])
 
   const handleParamsChange = useCallback((newParams: Record<string, string>) => {
     setParams(newParams)
@@ -69,17 +68,14 @@ export default function PortalPage() {
     router.push("/")
   }
 
-  // Show loading only while session is loading
-  if (sessionLoading) {
+  // Show loading while session is being verified
+  if (sessionLoading || !session?.authenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
-
-  // Temporarily allow rendering even without auth for debugging
-  const displaySession = session || { authenticated: false, username: "テストユーザー", isAdmin: false }
 
   const agent = AGENTS[selectedKey]
 
@@ -102,10 +98,10 @@ export default function PortalPage() {
         <PortalSidebar
           selectedKey={selectedKey}
           onSelect={handleAgentSelect}
-          username={displaySession.username}
-          isAdmin={displaySession.isAdmin}
+          username={session.username}
+          isAdmin={session.isAdmin}
           onLogout={handleLogout}
-          onAdminClick={displaySession.isAdmin ? () => router.push("/admin") : undefined}
+          onAdminClick={session.isAdmin ? () => router.push("/admin") : undefined}
           onDashboardClick={() => router.push("/dashboard")}
         />
       </div>

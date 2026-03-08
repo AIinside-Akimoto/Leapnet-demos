@@ -64,30 +64,26 @@ export default function DashboardPage() {
   const router = useRouter()
   const { session, sessionLoading, logout } = useAuth()
 
-  // Temporarily disabled auth check for debugging
-  // useEffect(() => {
-  //   if (sessionLoading) return
-  //   if (!session?.authenticated) {
-  //     router.push("/")
-  //   }
-  // }, [session, sessionLoading, router])
+  useEffect(() => {
+    // Only redirect if we're done loading AND not authenticated
+    if (!sessionLoading && !session?.authenticated) {
+      router.push("/")
+    }
+  }, [session, sessionLoading, router])
 
   async function handleLogout() {
     await logout()
     router.push("/")
   }
 
-  // Show loading only while session is loading
-  if (sessionLoading) {
+  // Show loading while session is being verified
+  if (sessionLoading || !session?.authenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
-
-  // Temporarily allow rendering even without auth for debugging
-  const displaySession = session || { authenticated: false, username: "テストユーザー", isAdmin: false }
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,11 +96,11 @@ export default function DashboardPage() {
             </div>
             <div>
               <h1 className="text-lg font-semibold text-foreground">AIエージェント デモポータル</h1>
-              <p className="text-sm text-muted-foreground">ようこそ、{displaySession.username} さん</p>
+              <p className="text-sm text-muted-foreground">ようこそ、{session.username} さん</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {displaySession.isAdmin && (
+            {session.isAdmin && (
               <Button
                 variant="ghost"
                 size="sm"

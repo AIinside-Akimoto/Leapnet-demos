@@ -18,9 +18,7 @@ export default function LoginPage() {
 
   // If already logged in, redirect to dashboard
   useEffect(() => {
-    console.log("[v0] Login page useEffect - sessionLoading:", sessionLoading, "session:", session)
     if (!sessionLoading && session?.authenticated) {
-      console.log("[v0] Login page - already authenticated, redirecting to dashboard")
       router.push("/dashboard")
     }
   }, [session, sessionLoading, router])
@@ -43,16 +41,12 @@ export default function LoginPage() {
       }
 
       // Store token and wait for session to be verified
-      console.log("[v0] Login page - calling login with token")
       const success = await login(data.token)
-      console.log("[v0] Login page - login result:", success)
 
       // Go to dashboard after login if successful
       if (success) {
-        console.log("[v0] Login page - login successful, redirecting to dashboard")
         router.push("/dashboard")
       } else {
-        console.log("[v0] Login page - login failed")
         setError("セッションの確立に失敗しました")
       }
     } catch {
