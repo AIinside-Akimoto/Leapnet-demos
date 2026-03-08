@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/lib/db"
 
 export async function GET(req: NextRequest) {
-  console.log("[v0] /api/auth/me called")
   const authHeader = req.headers.get("authorization")
   const token = authHeader?.replace("Bearer ", "")
-  console.log("[v0] Token present:", !!token)
 
   if (!token) {
-    console.log("[v0] No token - returning 401")
     return NextResponse.json({ authenticated: false }, { status: 401 })
   }
 
@@ -22,15 +19,11 @@ export async function GET(req: NextRequest) {
       AND s.expires_at > NOW()
   `
 
-  console.log("[v0] Session query returned rows:", rows.length)
-
   if (rows.length === 0) {
-    console.log("[v0] No valid session found - returning 401")
     return NextResponse.json({ authenticated: false }, { status: 401 })
   }
 
   const session = rows[0]
-  console.log("[v0] Session found for user:", session.username)
 
   return NextResponse.json({
     authenticated: true,

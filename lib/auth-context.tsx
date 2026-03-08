@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
+  const checkingRef = useRef(false)
 
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
@@ -37,38 +38,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const checkSession = useCallback(async (t: string): Promise<boolean> => {
-    console.log("[v0] checkSession called")
+    // Prevent concurrent calls
+    if (checkingRef.current) {
+      return false
+    }
+    checkingRef.current = true
+    
     try {
       const res = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${t}` },
       })
-      console.log("[v0] checkSession response:", res.status)
       if (res.ok) {
         const data = await res.json()
-        console.log("[v0] checkSession success:", data.username)
+        // Set both session and loading in a single batch
         setSession(data)
+        setSessionLoading(false)
         return true
       } else {
-        console.log("[v0] checkSession failed - clearing token")
         sessionStorage.removeItem("auth_token")
         setToken(null)
         setSession(null)
+        setSessionLoading(false)
         return false
       }
-    } catch (err) {
-      console.log("[v0] checkSession error:", err)
+    } catch {
       sessionStorage.removeItem("auth_token")
       setToken(null)
       setSession(null)
+      setSessionLoading(false)
       return false
     } finally {
-      setSessionLoading(false)
+      checkingRef.current = false
     }
   }, [])
 
   useEffect(() => {
     const stored = sessionStorage.getItem("auth_token")
-    console.log("[v0] AuthProvider init - stored token:", !!stored)
     if (stored) {
       setToken(stored)
       checkSession(stored)
