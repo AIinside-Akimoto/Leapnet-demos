@@ -136,7 +136,7 @@ export default function DashboardPage() {
             <Card
               key={app.id}
               className="group cursor-pointer transition-all hover:border-primary hover:shadow-md"
-              onClick={() => router.push(app.href)}
+              onClick={() => window.location.href = app.href}
             >
               <CardHeader>
                 <div className="flex items-start gap-4">
