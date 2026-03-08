@@ -44,8 +44,9 @@ export default function LoginPage() {
       const success = await login(data.token)
 
       // Go to dashboard after login if successful
+      // Use window.location.href for full page reload to ensure auth state is properly initialized
       if (success) {
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       } else {
         setError("セッションの確立に失敗しました")
       }
