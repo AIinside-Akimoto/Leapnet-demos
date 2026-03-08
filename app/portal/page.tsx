@@ -70,7 +70,18 @@ export default function PortalPage() {
     router.push("/")
   }
 
-  if (sessionLoading || !session?.authenticated) {
+  // Show loading while checking auth or while token exists but session not yet verified
+  const hasToken = typeof window !== "undefined" && sessionStorage.getItem("auth_token")
+  if (sessionLoading || (!session?.authenticated && hasToken)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // If no session and no token, the useEffect will redirect
+  if (!session?.authenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
