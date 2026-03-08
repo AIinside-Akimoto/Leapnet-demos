@@ -24,9 +24,9 @@ export default function PortalPage() {
   useEffect(() => {
     // Only redirect if we're done loading AND not authenticated
     if (!sessionLoading && !session?.authenticated) {
-      window.location.href = "/"
+      router.push("/")
     }
-  }, [session, sessionLoading])
+  }, [session, sessionLoading, router])
 
   const handleParamsChange = useCallback((newParams: Record<string, string>) => {
     setParams(newParams)
@@ -65,7 +65,7 @@ export default function PortalPage() {
 
   async function handleLogout() {
     await logout()
-    window.location.href = "/"
+    router.push("/")
   }
 
   // Show loading while session is being verified
@@ -110,8 +110,8 @@ export default function PortalPage() {
           username={session.username}
           isAdmin={session.isAdmin}
           onLogout={handleLogout}
-          onAdminClick={session.isAdmin ? () => window.location.href = "/admin" : undefined}
-          onDashboardClick={() => window.location.href = "/dashboard"}
+          onAdminClick={session.isAdmin ? () => router.push("/admin") : undefined}
+          onDashboardClick={() => router.push("/dashboard")}
         />
       </div>
 

@@ -19,9 +19,9 @@ export default function LoginPage() {
   // If already logged in, redirect to dashboard
   useEffect(() => {
     if (!sessionLoading && session?.authenticated) {
-      window.location.href = "/dashboard"
+      router.push("/dashboard")
     }
-  }, [session, sessionLoading])
+  }, [session, sessionLoading, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,9 +44,8 @@ export default function LoginPage() {
       const success = await login(data.token)
 
       // Go to dashboard after login if successful
-      // Use window.location.href for full page reload to ensure auth state is properly initialized
       if (success) {
-        window.location.href = "/dashboard"
+        router.push("/dashboard")
       } else {
         setError("セッションの確立に失敗しました")
       }

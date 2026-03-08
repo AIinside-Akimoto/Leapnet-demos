@@ -67,13 +67,13 @@ export default function DashboardPage() {
   useEffect(() => {
     // Only redirect if we're done loading AND not authenticated
     if (!sessionLoading && !session?.authenticated) {
-      window.location.href = "/"
+      router.push("/")
     }
-  }, [session, sessionLoading])
+  }, [session, sessionLoading, router])
 
   async function handleLogout() {
     await logout()
-    window.location.href = "/"
+    router.push("/")
   }
 
   // Show loading while session is being verified
@@ -113,7 +113,7 @@ export default function DashboardPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.location.href = "/admin"}
+                onClick={() => router.push("/admin")}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 管理画面
@@ -145,7 +145,7 @@ export default function DashboardPage() {
             <Card
               key={app.id}
               className="group cursor-pointer transition-all hover:border-primary hover:shadow-md"
-              onClick={() => window.location.href = app.href}
+              onClick={() => router.push(app.href)}
             >
               <CardHeader>
                 <div className="flex items-start gap-4">

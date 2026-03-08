@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 
 interface SessionData {
   authenticated: boolean
@@ -19,15 +19,32 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+// Use localStorage instead of sessionStorage for more reliable persistence
+const TOKEN_KEY = "auth_token"
+
+function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+function setStoredToken(token: string): void {
+  if (typeof window === "undefined") return
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+function removeStoredToken(): void {
+  if (typeof window === "undefined") return
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
-  const checkingRef = useRef(false)
 
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
-      const currentToken = sessionStorage.getItem("auth_token")
+      const currentToken = getStoredToken()
       const headers = new Headers(options.headers)
       if (currentToken) {
         headers.set("Authorization", `Bearer ${currentToken}`)
@@ -37,69 +54,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const checkSession = useCallback(async (t: string): Promise<boolean> => {
-    // Prevent concurrent calls
-    if (checkingRef.current) {
-      return false
-    }
-    checkingRef.current = true
-    
-    try {
-      const res = await fetch("/api/auth/me", {
-        headers: { Authorization: `Bearer ${t}` },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        // Set both session and loading in a single batch
-        setSession(data)
+  // Initialize auth state on mount
+  useEffect(() => {
+    let cancelled = false
+
+    async function initAuth() {
+      const storedToken = getStoredToken()
+      
+      if (!storedToken) {
         setSessionLoading(false)
-        return true
-      } else {
-        sessionStorage.removeItem("auth_token")
+        return
+      }
+
+      try {
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        })
+        
+        if (cancelled) return
+
+        if (res.ok) {
+          const data = await res.json()
+          setToken(storedToken)
+          setSession(data)
+        } else {
+          // Invalid token, clear it
+          removeStoredToken()
+          setToken(null)
+          setSession(null)
+        }
+      } catch {
+        if (cancelled) return
+        removeStoredToken()
         setToken(null)
         setSession(null)
-        setSessionLoading(false)
-        return false
+      } finally {
+        if (!cancelled) {
+          setSessionLoading(false)
+        }
       }
-    } catch {
-      sessionStorage.removeItem("auth_token")
-      setToken(null)
-      setSession(null)
-      setSessionLoading(false)
-      return false
-    } finally {
-      checkingRef.current = false
+    }
+
+    initAuth()
+
+    return () => {
+      cancelled = true
     }
   }, [])
 
-  useEffect(() => {
-    const stored = sessionStorage.getItem("auth_token")
-    if (stored) {
-      setToken(stored)
-      checkSession(stored)
-    } else {
-      setSessionLoading(false)
+  const login = useCallback(async (newToken: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${newToken}` },
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setStoredToken(newToken)
+        setToken(newToken)
+        setSession(data)
+        return true
+      } else {
+        return false
+      }
+    } catch {
+      return false
     }
-  }, [checkSession])
-
-  const login = useCallback(
-    async (newToken: string): Promise<boolean> => {
-      sessionStorage.setItem("auth_token", newToken)
-      setToken(newToken)
-      return await checkSession(newToken)
-    },
-    [checkSession]
-  )
+  }, [])
 
   const logout = useCallback(async () => {
-    const currentToken = sessionStorage.getItem("auth_token")
+    const currentToken = getStoredToken()
     if (currentToken) {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${currentToken}` },
-      })
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${currentToken}` },
+        })
+      } catch {
+        // Ignore logout errors
+      }
     }
-    sessionStorage.removeItem("auth_token")
+    removeStoredToken()
     setToken(null)
     setSession(null)
   }, [])
