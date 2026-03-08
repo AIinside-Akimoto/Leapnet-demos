@@ -22,10 +22,8 @@ export default function PortalPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    // Don't redirect while still loading or if a token exists in storage (session being verified)
     if (sessionLoading) return
-    const hasToken = sessionStorage.getItem("auth_token")
-    if (!session?.authenticated && !hasToken) {
+    if (!session?.authenticated) {
       router.push("/")
     }
   }, [session, sessionLoading, router])
@@ -70,9 +68,8 @@ export default function PortalPage() {
     router.push("/")
   }
 
-  // Show loading while checking auth or while token exists but session not yet verified
-  const hasToken = typeof window !== "undefined" && sessionStorage.getItem("auth_token")
-  if (sessionLoading || (!session?.authenticated && hasToken)) {
+  // Show loading while checking auth
+  if (sessionLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -80,7 +77,7 @@ export default function PortalPage() {
     )
   }
 
-  // If no session and no token, the useEffect will redirect
+  // Not authenticated - will redirect via useEffect
   if (!session?.authenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
