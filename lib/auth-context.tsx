@@ -12,7 +12,7 @@ interface AuthContextValue {
   token: string | null
   session: SessionData | null
   sessionLoading: boolean
-  login: (token: string) => Promise<void>
+  login: (token: string) => Promise<boolean>
   logout: () => Promise<void>
   authFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const checkSession = useCallback(async (t: string) => {
+  const checkSession = useCallback(async (t: string): Promise<boolean> => {
     try {
       const res = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${t}` },
@@ -44,15 +44,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         setSession(data)
+        return true
       } else {
         sessionStorage.removeItem("auth_token")
         setToken(null)
         setSession(null)
+        return false
       }
     } catch {
       sessionStorage.removeItem("auth_token")
       setToken(null)
       setSession(null)
+      return false
     } finally {
       setSessionLoading(false)
     }
@@ -69,10 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkSession])
 
   const login = useCallback(
-    async (newToken: string) => {
+    async (newToken: string): Promise<boolean> => {
       sessionStorage.setItem("auth_token", newToken)
       setToken(newToken)
-      await checkSession(newToken)
+      return await checkSession(newToken)
     },
     [checkSession]
   )

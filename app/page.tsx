@@ -41,10 +41,14 @@ export default function LoginPage() {
       }
 
       // Store token and wait for session to be verified
-      await login(data.token)
+      const success = await login(data.token)
 
-      // Go to dashboard after login
-      router.push("/dashboard")
+      // Go to dashboard after login if successful
+      if (success) {
+        router.push("/dashboard")
+      } else {
+        setError("セッションの確立に失敗しました")
+      }
     } catch {
       setError("通信エラーが発生しました")
     } finally {
