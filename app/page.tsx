@@ -19,9 +19,9 @@ export default function LoginPage() {
   // If already logged in, redirect to dashboard
   useEffect(() => {
     if (!sessionLoading && session?.authenticated) {
-      router.push("/dashboard")
+      window.location.href = "/dashboard"
     }
-  }, [session, sessionLoading, router])
+  }, [session, sessionLoading])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
 
 interface SessionData {
   authenticated: boolean
@@ -20,9 +20,15 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("auth_token")
+    }
+    return null
+  })
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
+  const initialized = useRef(false)
 
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
@@ -62,6 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Prevent double initialization in strict mode
+    if (initialized.current) return
+    initialized.current = true
+    
     const stored = sessionStorage.getItem("auth_token")
     if (stored) {
       setToken(stored)

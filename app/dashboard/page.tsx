@@ -67,17 +67,26 @@ export default function DashboardPage() {
   useEffect(() => {
     // Only redirect if we're done loading AND not authenticated
     if (!sessionLoading && !session?.authenticated) {
-      router.push("/")
+      window.location.href = "/"
     }
-  }, [session, sessionLoading, router])
+  }, [session, sessionLoading])
 
   async function handleLogout() {
     await logout()
-    router.push("/")
+    window.location.href = "/"
   }
 
   // Show loading while session is being verified
-  if (sessionLoading || !session?.authenticated) {
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+  
+  // Not authenticated - will redirect via useEffect
+  if (!session?.authenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -104,7 +113,7 @@ export default function DashboardPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => router.push("/admin")}
+                onClick={() => window.location.href = "/admin"}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 管理画面
