@@ -66,8 +66,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (sessionLoading) return
-    const hasToken = sessionStorage.getItem("auth_token")
-    if (!session?.authenticated && !hasToken) {
+    if (!session?.authenticated) {
       router.push("/")
     }
   }, [session, sessionLoading, router])
