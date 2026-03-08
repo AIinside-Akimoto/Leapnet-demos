@@ -22,8 +22,10 @@ export default function PortalPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
+    console.log("[v0] Portal useEffect - sessionLoading:", sessionLoading, "session:", session)
     if (sessionLoading) return
     if (!session?.authenticated) {
+      console.log("[v0] Portal - redirecting to login because not authenticated")
       router.push("/")
     }
   }, [session, sessionLoading, router])
@@ -69,6 +71,7 @@ export default function PortalPage() {
   }
 
   // Show loading while checking auth
+  console.log("[v0] Portal render - sessionLoading:", sessionLoading, "session?.authenticated:", session?.authenticated)
   if (sessionLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">

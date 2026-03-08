@@ -65,8 +65,10 @@ export default function DashboardPage() {
   const { session, sessionLoading, logout } = useAuth()
 
   useEffect(() => {
+    console.log("[v0] Dashboard useEffect - sessionLoading:", sessionLoading, "session:", session)
     if (sessionLoading) return
     if (!session?.authenticated) {
+      console.log("[v0] Dashboard - redirecting to login because not authenticated")
       router.push("/")
     }
   }, [session, sessionLoading, router])
