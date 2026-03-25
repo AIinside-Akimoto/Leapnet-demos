@@ -6,7 +6,6 @@ import {
   Loader2, 
   LogOut, 
   Bot, 
-  MessageSquare, 
   FileSearch, 
   Calculator,
   Settings,
@@ -36,14 +35,6 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-primary/10 text-primary",
   },
   {
-    id: "chat-ai",
-    title: "チャットAI",
-    description: "自由な質問に回答する汎用チャットボットです",
-    icon: <MessageSquare className="h-6 w-6" />,
-    href: "/demo/chat",
-    color: "bg-emerald-500/10 text-emerald-600",
-  },
-  {
     id: "document-ai",
     title: "ドキュメント検索AI",
     description: "社内ドキュメントを検索・要約するAIアシスタントです",
@@ -58,14 +49,6 @@ const DEMO_APPS: DemoApp[] = [
     icon: <Calculator className="h-6 w-6" />,
     href: "/demo/analysis",
     color: "bg-sky-500/10 text-sky-600",
-  },
-  {
-    id: "docs-generator",
-    title: "AIエージェント設計支援",
-    description: "音声文字起こしからAIエージェントの設計図とプロンプトを自動生成します",
-    icon: <FileCode className="h-6 w-6" />,
-    href: "/docsgenerator",
-    color: "bg-violet-500/10 text-violet-600",
   },
 ]
 
@@ -118,6 +101,14 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/docsgenerator")}
+            >
+              <FileCode className="mr-2 h-4 w-4" />
+              AIエージェント設計支援
+            </Button>
             {session.isAdmin && (
               <Button
                 variant="ghost"
