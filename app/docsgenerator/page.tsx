@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, ArrowLeft, Send, FileText, Code, BookOpen, Lightbulb, Copy, Check } from "lucide-react"
+import { Loader2, ArrowLeft, Send, FileText, Code, BookOpen, Lightbulb, Copy, Check, Mic, MicOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -30,6 +30,83 @@ export default function DocsGeneratorPage() {
   const [result, setResult] = useState<ApiResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  
+  // Speech recognition states
+  const [isListening, setIsListening] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
+
+  // Check if speech recognition is supported
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      setSpeechSupported(!!SpeechRecognition)
+    }
+  }, [])
+
+  const startListening = useCallback(() => {
+    if (!speechSupported) return
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    
+    recognition.lang = "ja-JP"
+    recognition.continuous = true
+    recognition.interimResults = true
+
+    recognition.onstart = () => {
+      setIsListening(true)
+    }
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let finalTranscript = ""
+      let interimTranscript = ""
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+
+      if (finalTranscript) {
+        setTranscription((prev) => prev + finalTranscript)
+      }
+    }
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("Speech recognition error:", event.error)
+      setIsListening(false)
+      if (event.error === "not-allowed") {
+        setError("マイクへのアクセスが許可されていません。ブラウザの設定を確認してください。")
+      }
+    }
+
+    recognition.onend = () => {
+      setIsListening(false)
+    }
+
+    recognitionRef.current = recognition
+    recognition.start()
+  }, [speechSupported])
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      recognitionRef.current = null
+    }
+    setIsListening(false)
+  }, [])
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }, [isListening, startListening, stopListening])
 
   async function handleCopy(content: string, field: string) {
     try {
@@ -141,19 +218,42 @@ export default function DocsGeneratorPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Textarea
-              placeholder="例: 経費精算のレシートをチェックするエージェントを作りたい。金額と日付、店名を抽出して、規定の3000円を超えている場合は警告を出してほしい。あと、飲み屋さんの場合は交際費として分類して。"
-              value={transcription}
-              onChange={(e) => setTranscription(e.target.value)}
-              rows={6}
-              className="resize-none"
-            />
+            <div className="relative">
+              <Textarea
+                placeholder="例: 経費精算のレシートをチェックするエージェントを作りたい。金額と日付、店名を抽出して、規定の3000円を超えている場合は警告を出してほしい。あと、飲み屋さんの場合は交際費として分類して。"
+                value={transcription}
+                onChange={(e) => setTranscription(e.target.value)}
+                rows={6}
+                className="resize-none pr-12"
+              />
+              {speechSupported && (
+                <Button
+                  type="button"
+                  variant={isListening ? "destructive" : "secondary"}
+                  size="icon"
+                  onClick={toggleListening}
+                  className="absolute right-2 top-2"
+                  title={isListening ? "録音を停止" : "音声入力を開始"}
+                >
+                  {isListening ? (
+                    <MicOff className="h-4 w-4" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
+            {isListening && (
+              <p className="text-sm text-primary animate-pulse">
+                音声を認識中...話してください
+              </p>
+            )}
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !transcription.trim()}
+              disabled={isLoading || !transcription.trim() || isListening}
               className="w-full"
             >
               {isLoading ? (
