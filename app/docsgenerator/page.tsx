@@ -31,82 +31,85 @@ export default function DocsGeneratorPage() {
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   
-  // Speech recognition states
-  const [isListening, setIsListening] = useState(false)
-  const [speechSupported, setSpeechSupported] = useState(false)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  // Audio recording states (using OpenAI Whisper)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const { authFetch } = useAuth()
 
-  // Check if speech recognition is supported
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-      setSpeechSupported(!!SpeechRecognition)
-    }
-  }, [])
-
-  const startListening = useCallback(() => {
-    if (!speechSupported) return
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-    
-    recognition.lang = "ja-JP"
-    recognition.continuous = true
-    recognition.interimResults = true
-
-    recognition.onstart = () => {
-      setIsListening(true)
-    }
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = ""
-      let interimTranscript = ""
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript
-        } else {
-          interimTranscript += transcript
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      
+      audioChunksRef.current = []
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
         }
       }
 
-      if (finalTranscript) {
-        setTranscription((prev) => prev + finalTranscript)
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop())
+        
+        if (audioChunksRef.current.length === 0) return
+
+        setIsTranscribing(true)
+        setError(null)
+
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+          const formData = new FormData()
+          formData.append("audio", audioBlob, "recording.webm")
+
+          const response = await authFetch("/api/transcribe", {
+            method: "POST",
+            body: formData,
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || "文字起こしに失敗しました")
+          }
+
+          const data = await response.json()
+          if (data.text) {
+            setTranscription((prev) => prev ? prev + "\n" + data.text : data.text)
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "文字起こしに失敗しました")
+        } finally {
+          setIsTranscribing(false)
+        }
       }
-    }
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("Speech recognition error:", event.error)
-      setIsListening(false)
-      if (event.error === "not-allowed") {
-        setError("マイクへのアクセスが許可されていません。ブラウザの設定を確認してください。")
-      }
+      mediaRecorderRef.current = mediaRecorder
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (err) {
+      console.error("Recording error:", err)
+      setError("マイクへのアクセスが許可されていません。ブラウザの設定を確認してください。")
     }
+  }, [authFetch])
 
-    recognition.onend = () => {
-      setIsListening(false)
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop()
+      mediaRecorderRef.current = null
     }
-
-    recognitionRef.current = recognition
-    recognition.start()
-  }, [speechSupported])
-
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-      recognitionRef.current = null
-    }
-    setIsListening(false)
+    setIsRecording(false)
   }, [])
 
-  const toggleListening = useCallback(() => {
-    if (isListening) {
-      stopListening()
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording()
     } else {
-      startListening()
+      startRecording()
     }
-  }, [isListening, startListening, stopListening])
+  }, [isRecording, startRecording, stopRecording])
 
   async function handleCopy(content: string, field: string) {
     try {
@@ -226,26 +229,31 @@ export default function DocsGeneratorPage() {
                 rows={6}
                 className="resize-none pr-12"
               />
-              {speechSupported && (
-                <Button
-                  type="button"
-                  variant={isListening ? "destructive" : "secondary"}
-                  size="icon"
-                  onClick={toggleListening}
-                  className="absolute right-2 top-2"
-                  title={isListening ? "録音を停止" : "音声入力を開始"}
-                >
-                  {isListening ? (
-                    <MicOff className="h-4 w-4" />
-                  ) : (
-                    <Mic className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant={isRecording ? "destructive" : "secondary"}
+                size="icon"
+                onClick={toggleRecording}
+                disabled={isTranscribing}
+                className="absolute right-2 top-2"
+                title={isRecording ? "録音を停止" : "音声入力を開始（Whisper）"}
+              >
+                {isRecording ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-            {isListening && (
-              <p className="text-sm text-primary animate-pulse">
-                音声を認識中...話してください
+            {isRecording && (
+              <p className="text-sm text-destructive animate-pulse">
+                録音中...話し終わったらボタンを押して停止してください
+              </p>
+            )}
+            {isTranscribing && (
+              <p className="text-sm text-primary animate-pulse flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Whisperで文字起こし中...
               </p>
             )}
             {error && (
@@ -253,7 +261,7 @@ export default function DocsGeneratorPage() {
             )}
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !transcription.trim() || isListening}
+              disabled={isLoading || !transcription.trim() || isRecording || isTranscribing}
               className="w-full"
             >
               {isLoading ? (
