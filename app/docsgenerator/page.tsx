@@ -31,7 +31,7 @@ export default function DocsGeneratorPage() {
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   
-  // Audio recording states (using OpenAI Whisper)
+  // Audio recording states
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -236,7 +236,7 @@ export default function DocsGeneratorPage() {
                 onClick={toggleRecording}
                 disabled={isTranscribing}
                 className="absolute right-2 top-2"
-                title={isRecording ? "録音を停止" : "音声入力を開始（Whisper）"}
+                title={isRecording ? "録音を停止" : "音声入力を開始"}
               >
                 {isRecording ? (
                   <MicOff className="h-4 w-4" />
@@ -253,7 +253,7 @@ export default function DocsGeneratorPage() {
             {isTranscribing && (
               <p className="text-sm text-primary animate-pulse flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Whisperで文字起こし中...
+                音声を文字起こし中...
               </p>
             )}
             {error && (
