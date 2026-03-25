@@ -9,8 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAuth } from "@/lib/auth-context"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+import { MarkdownWithMermaid } from "@/components/markdown-with-mermaid"
 
 interface ApiResponse {
   overview: string
@@ -203,11 +202,7 @@ export default function DocsGeneratorPage() {
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[500px] rounded-md border p-4">
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {result.system_prompt}
-                        </ReactMarkdown>
-                      </div>
+                      <MarkdownWithMermaid content={result.system_prompt} />
                     </ScrollArea>
                   </CardContent>
                 </Card>
@@ -222,11 +217,7 @@ export default function DocsGeneratorPage() {
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[500px] rounded-md border p-4">
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {result.business_specification}
-                        </ReactMarkdown>
-                      </div>
+                      <MarkdownWithMermaid content={result.business_specification} />
                     </ScrollArea>
                   </CardContent>
                 </Card>
