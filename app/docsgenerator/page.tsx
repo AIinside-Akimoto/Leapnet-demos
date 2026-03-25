@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, ArrowLeft, Send, FileText, Code, BookOpen, Lightbulb } from "lucide-react"
+import { Loader2, ArrowLeft, Send, FileText, Code, BookOpen, Lightbulb, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -29,6 +29,25 @@ export default function DocsGeneratorPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<ApiResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  async function handleCopy(content: string, field: string) {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement("textarea")
+      textArea.value = content
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    }
+  }
 
   useEffect(() => {
     if (!sessionLoading && !session?.authenticated) {
@@ -194,11 +213,31 @@ export default function DocsGeneratorPage() {
               </TabsList>
               <TabsContent value="system_prompt">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>システムプロンプト</CardTitle>
-                    <CardDescription>
-                      AIエージェントに設定するMarkdown形式のシステムプロンプト
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                    <div>
+                      <CardTitle>システムプロンプト</CardTitle>
+                      <CardDescription>
+                        AIエージェントに設定するMarkdown形式のシステムプロンプト
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy(result.system_prompt, "system_prompt")}
+                      className="gap-2"
+                    >
+                      {copiedField === "system_prompt" ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          コピーしました
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          コピー
+                        </>
+                      )}
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[500px] rounded-md border p-4">
@@ -209,11 +248,31 @@ export default function DocsGeneratorPage() {
               </TabsContent>
               <TabsContent value="business_spec">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>業務仕様書</CardTitle>
-                    <CardDescription>
-                      業務フローや判断基準を含む詳細な業務仕様書
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                    <div>
+                      <CardTitle>業務仕様書</CardTitle>
+                      <CardDescription>
+                        業務フローや判断基準を含む詳細な業務仕様書
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy(result.business_specification, "business_spec")}
+                      className="gap-2"
+                    >
+                      {copiedField === "business_spec" ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          コピーしました
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          コピー
+                        </>
+                      )}
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[500px] rounded-md border p-4">
