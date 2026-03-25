@@ -10,7 +10,8 @@ import {
   FileSearch, 
   Calculator,
   Settings,
-  Sparkles
+  Sparkles,
+  FileCode
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -57,6 +58,14 @@ const DEMO_APPS: DemoApp[] = [
     icon: <Calculator className="h-6 w-6" />,
     href: "/demo/analysis",
     color: "bg-sky-500/10 text-sky-600",
+  },
+  {
+    id: "docs-generator",
+    title: "AIエージェント設計支援",
+    description: "音声文字起こしからAIエージェントの設計図とプロンプトを自動生成します",
+    icon: <FileCode className="h-6 w-6" />,
+    href: "/docsgenerator",
+    color: "bg-violet-500/10 text-violet-600",
   },
 ]
 
