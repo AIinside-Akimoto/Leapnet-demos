@@ -43,11 +43,11 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-violet-500/10 text-violet-600",
   },
   {
-    id: "document-ai",
-    title: "ドキュメント検索AI",
-    description: "社内ドキュメントを検索・要約するAIアシスタントです",
+    id: "initial-response",
+    title: "初動対応アシスタント",
+    description: "製造業向けの不具合分析プリセットです",
     icon: <FileSearch className="h-6 w-6" />,
-    href: "/demo/document",
+    href: "https://initialresponse.streamlit.app/",
     color: "bg-amber-500/10 text-amber-600",
   },
   {
@@ -145,7 +145,13 @@ export default function DashboardPage() {
             <Card
               key={app.id}
               className="group cursor-pointer transition-all hover:border-primary hover:shadow-md"
-              onClick={() => router.push(app.href)}
+              onClick={() => {
+                if (app.href.startsWith("http")) {
+                  window.open(app.href, "_blank")
+                } else {
+                  router.push(app.href)
+                }
+              }}
             >
               <CardHeader>
                 <div className="flex items-start gap-4">
