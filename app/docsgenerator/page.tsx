@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, ArrowLeft, Send, FileText, Code, BookOpen, Lightbulb, Copy, Check } from "lucide-react"
+import { Loader2, ArrowLeft, Send, FileText, Code, BookOpen, Lightbulb, Copy, Check, Mic, MicOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -30,6 +30,86 @@ export default function DocsGeneratorPage() {
   const [result, setResult] = useState<ApiResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  
+  // Audio recording states (using OpenAI Whisper)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const { authFetch } = useAuth()
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      
+      audioChunksRef.current = []
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      }
+
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop())
+        
+        if (audioChunksRef.current.length === 0) return
+
+        setIsTranscribing(true)
+        setError(null)
+
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+          const formData = new FormData()
+          formData.append("audio", audioBlob, "recording.webm")
+
+          const response = await authFetch("/api/transcribe", {
+            method: "POST",
+            body: formData,
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || "文字起こしに失敗しました")
+          }
+
+          const data = await response.json()
+          if (data.text) {
+            setTranscription((prev) => prev ? prev + "\n" + data.text : data.text)
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "文字起こしに失敗しました")
+        } finally {
+          setIsTranscribing(false)
+        }
+      }
+
+      mediaRecorderRef.current = mediaRecorder
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (err) {
+      console.error("Recording error:", err)
+      setError("マイクへのアクセスが許可されていません。ブラウザの設定を確認してください。")
+    }
+  }, [authFetch])
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop()
+      mediaRecorderRef.current = null
+    }
+    setIsRecording(false)
+  }, [])
+
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording()
+    }
+  }, [isRecording, startRecording, stopRecording])
 
   async function handleCopy(content: string, field: string) {
     try {
@@ -141,19 +221,47 @@ export default function DocsGeneratorPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Textarea
-              placeholder="例: 経費精算のレシートをチェックするエージェントを作りたい。金額と日付、店名を抽出して、規定の3000円を超えている場合は警告を出してほしい。あと、飲み屋さんの場合は交際費として分類して。"
-              value={transcription}
-              onChange={(e) => setTranscription(e.target.value)}
-              rows={6}
-              className="resize-none"
-            />
+            <div className="relative">
+              <Textarea
+                placeholder="例: 経費精算のレシートをチェックするエージェントを作りたい。金額と日付、店名を抽出して、規定の3000円を超えている場合は警告を出してほしい。あと、飲み屋さんの場合は交際費として分類して。"
+                value={transcription}
+                onChange={(e) => setTranscription(e.target.value)}
+                rows={6}
+                className="resize-none pr-12"
+              />
+              <Button
+                type="button"
+                variant={isRecording ? "destructive" : "secondary"}
+                size="icon"
+                onClick={toggleRecording}
+                disabled={isTranscribing}
+                className="absolute right-2 top-2"
+                title={isRecording ? "録音を停止" : "音声入力を開始（Whisper）"}
+              >
+                {isRecording ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            {isRecording && (
+              <p className="text-sm text-destructive animate-pulse">
+                録音中...話し終わったらボタンを押して停止してください
+              </p>
+            )}
+            {isTranscribing && (
+              <p className="text-sm text-primary animate-pulse flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Whisperで文字起こし中...
+              </p>
+            )}
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !transcription.trim()}
+              disabled={isLoading || !transcription.trim() || isRecording || isTranscribing}
               className="w-full"
             >
               {isLoading ? (
