@@ -6,11 +6,11 @@ import {
   Loader2, 
   LogOut, 
   Bot, 
-  MessageSquare, 
   FileSearch, 
   Calculator,
   Settings,
-  Sparkles
+  Sparkles,
+  FileCode
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,12 +35,12 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-primary/10 text-primary",
   },
   {
-    id: "chat-ai",
-    title: "チャットAI",
-    description: "自由な質問に回答する汎用チャットボットです",
-    icon: <MessageSquare className="h-6 w-6" />,
-    href: "/demo/chat",
-    color: "bg-emerald-500/10 text-emerald-600",
+    id: "docs-generator",
+    title: "AIエージェント設計支援",
+    description: "音声文字起こしからAIエージェントの設計図とプロンプトを自動生成します",
+    icon: <FileCode className="h-6 w-6" />,
+    href: "/docsgenerator",
+    color: "bg-violet-500/10 text-violet-600",
   },
   {
     id: "document-ai",
