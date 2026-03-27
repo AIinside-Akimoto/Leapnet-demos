@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const response = await fetch(`${apiUrl}/create-specdocs`, {
+    const response = await fetch(`${apiUrl}/create-specs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
