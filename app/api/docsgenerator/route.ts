@@ -14,6 +14,13 @@ export async function POST(req: NextRequest) {
 
     const apiUrl = process.env.DOCS_GENERATOR_API_URL
     const apiKey = process.env.DOCS_GENERATOR_API_KEY
+    
+    const fullUrl = `${apiUrl}/create-specs`
+    console.log("[v0] ========== API DEBUG ==========")
+    console.log("[v0] DOCS_GENERATOR_API_URL:", apiUrl || "NOT SET")
+    console.log("[v0] DOCS_GENERATOR_API_KEY:", apiKey ? "SET" : "NOT SET")
+    console.log("[v0] Full URL:", fullUrl)
+    console.log("[v0] =================================")
 
     if (!apiUrl || !apiKey) {
       return NextResponse.json(
