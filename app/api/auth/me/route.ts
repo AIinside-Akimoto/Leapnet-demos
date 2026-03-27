@@ -29,5 +29,6 @@ export async function GET(req: NextRequest) {
     authenticated: true,
     isAdmin: session.is_admin,
     username: session.username,
+    userId: session.user_id,
   })
 }

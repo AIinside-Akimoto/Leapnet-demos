@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { 
   Loader2, 
@@ -10,11 +10,40 @@ import {
   Calculator,
   Settings,
   Sparkles,
-  FileCode
+  FileCode,
+  Plus,
+  Heart,
+  ExternalLink,
+  Pencil,
+  Trash2,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useAuth } from "@/lib/auth-context"
+
+interface AgentEntry {
+  id: number
+  name: string
+  url: string
+  comment: string
+  likes: number
+  created_by: number
+  creator_name: string
+  created_at: string
+  updated_at: string
+}
 
 interface DemoApp {
   id: string
@@ -62,7 +91,30 @@ const DEMO_APPS: DemoApp[] = [
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { session, sessionLoading, logout } = useAuth()
+  const { session, sessionLoading, logout, authFetch } = useAuth()
+  
+  // Agent library state
+  const [agents, setAgents] = useState<AgentEntry[]>([])
+  const [agentsLoading, setAgentsLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingAgent, setEditingAgent] = useState<AgentEntry | null>(null)
+  const [formData, setFormData] = useState({ name: "", url: "", comment: "" })
+  const [formLoading, setFormLoading] = useState(false)
+
+  // Fetch agents
+  const fetchAgents = useCallback(async () => {
+    try {
+      const res = await fetch("/api/agents")
+      if (res.ok) {
+        const data = await res.json()
+        setAgents(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch agents:", error)
+    } finally {
+      setAgentsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     // Only redirect if we're done loading AND not authenticated
@@ -71,9 +123,97 @@ export default function DashboardPage() {
     }
   }, [session, sessionLoading, router])
 
+  useEffect(() => {
+    if (session?.authenticated) {
+      fetchAgents()
+    }
+  }, [session, fetchAgents])
+
   async function handleLogout() {
     await logout()
     router.push("/")
+  }
+
+  // Agent CRUD handlers
+  function openCreateDialog() {
+    setEditingAgent(null)
+    setFormData({ name: "", url: "", comment: "" })
+    setDialogOpen(true)
+  }
+
+  function openEditDialog(agent: AgentEntry) {
+    setEditingAgent(agent)
+    setFormData({ name: agent.name, url: agent.url, comment: agent.comment })
+    setDialogOpen(true)
+  }
+
+  async function handleSubmitAgent() {
+    if (!formData.name || !formData.url) return
+    
+    setFormLoading(true)
+    try {
+      if (editingAgent) {
+        // Update
+        const res = await authFetch(`/api/agents/${editingAgent.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+        if (res.ok) {
+          await fetchAgents()
+          setDialogOpen(false)
+        }
+      } else {
+        // Create
+        const res = await authFetch("/api/agents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+        if (res.ok) {
+          await fetchAgents()
+          setDialogOpen(false)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to save agent:", error)
+    } finally {
+      setFormLoading(false)
+    }
+  }
+
+  async function handleDeleteAgent(id: number) {
+    if (!confirm("このエージェントを削除しますか？")) return
+    
+    try {
+      const res = await authFetch(`/api/agents/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        await fetchAgents()
+      }
+    } catch (error) {
+      console.error("Failed to delete agent:", error)
+    }
+  }
+
+  async function handleLike(id: number) {
+    try {
+      const res = await fetch(`/api/agents/${id}/like`, { method: "POST" })
+      if (res.ok) {
+        const data = await res.json()
+        setAgents(prev => prev.map(a => a.id === id ? { ...a, likes: data.likes } : a))
+      }
+    } catch (error) {
+      console.error("Failed to like agent:", error)
+    }
+  }
+
+  function formatDate(dateString: string) {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" })
+  }
+
+  function canEditAgent(agent: AgentEntry) {
+    return session?.isAdmin || agent.created_by === session?.userId
   }
 
   // Show loading while session is being verified
@@ -176,7 +316,155 @@ export default function DashboardPage() {
             </Card>
           ))}
         </div>
+
+        {/* Agent Library Section */}
+        <div className="mt-16 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">AIエージェントライブラリ</h2>
+              <p className="mt-2 text-muted-foreground">
+                ユーザーが登録したAIエージェントの一覧
+              </p>
+            </div>
+            <Button onClick={openCreateDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              エージェントを登録
+            </Button>
+          </div>
+        </div>
+
+        {agentsLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : agents.length === 0 ? (
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">まだエージェントが登録されていません</p>
+            <Button className="mt-4" onClick={openCreateDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              最初のエージェントを登録
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {agents.map((agent) => (
+              <Card key={agent.id} className="transition-all hover:shadow-md">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground truncate">{agent.name}</h3>
+                        <a
+                          href={agent.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-primary hover:text-primary/80"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                      {agent.comment && (
+                        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{agent.comment}</p>
+                      )}
+                      <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>登録者: {agent.creator_name}</span>
+                        <span>更新日: {formatDate(agent.updated_at)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleLike(agent.id)}
+                        className="gap-1 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                      >
+                        <Heart className="h-4 w-4" />
+                        <span>{agent.likes}</span>
+                      </Button>
+                      {canEditAgent(agent) && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(agent)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteAgent(agent.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingAgent ? "エージェントを編集" : "エージェントを登録"}</DialogTitle>
+            <DialogDescription>
+              AIエージェントの情報を入力してください
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">名前 *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="エージェントの名前"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="url">URL *</Label>
+              <Input
+                id="url"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="comment">コメント</Label>
+              <Textarea
+                id="comment"
+                value={formData.comment}
+                onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                placeholder="エージェントの説明"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleSubmitAgent}
+              disabled={formLoading || !formData.name || !formData.url}
+            >
+              {formLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {editingAgent ? "更新" : "登録"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
