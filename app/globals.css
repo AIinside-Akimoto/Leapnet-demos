@@ -125,7 +125,9 @@
 }
 
 /* Hide Mermaid error elements that get injected into DOM */
-#d[style*="position: absolute"],
-[id^="d"][style*="font-size: 16px"] {
+#d.mermaid-error,
+.mermaid .error-icon,
+.mermaid .error-text,
+svg[id^="mermaid"] + div[style*="position: absolute"] {
   display: none !important;
 }
