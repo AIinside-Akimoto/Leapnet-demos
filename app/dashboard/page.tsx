@@ -346,11 +346,11 @@ export default function DashboardPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-2">
             {agents.map((agent) => (
               <Card key={agent.id} className="transition-all hover:shadow-md">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
+                <CardContent className="px-4 py-2">
+                  <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground truncate">{agent.name}</h3>
@@ -363,21 +363,21 @@ export default function DashboardPage() {
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
+                        {agent.comment && (
+                          <span className="text-sm text-muted-foreground truncate">- {agent.comment}</span>
+                        )}
                       </div>
-                      {agent.comment && (
-                        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{agent.comment}</p>
-                      )}
-                      <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>登録者: {agent.creator_name}</span>
                         <span>更新日: {formatDate(agent.updated_at)}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleLike(agent.id)}
-                        className="gap-1 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                        className="gap-1 text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-8 px-2"
                       >
                         <Heart className="h-4 w-4" />
                         <span>{agent.likes}</span>
@@ -387,6 +387,7 @@ export default function DashboardPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => openEditDialog(agent)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -394,8 +395,9 @@ export default function DashboardPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => handleDeleteAgent(agent.id)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive h-8 w-8"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
