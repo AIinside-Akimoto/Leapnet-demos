@@ -11,7 +11,7 @@ let mermaidInitialized = false
 export function MermaidDiagram({ chart }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [svg, setSvg] = useState<string>("")
-  const [error, setError] = useState<string | null>(null)
+  const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const uniqueId = useId().replace(/:/g, "-")
 
@@ -34,6 +34,11 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
             theme: "default",
             securityLevel: "loose",
             fontFamily: "inherit",
+            // Support for Japanese and special characters
+            flowchart: {
+              htmlLabels: true,
+              useMaxWidth: true,
+            },
           })
           mermaidInitialized = true
         }
@@ -43,13 +48,13 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         
         if (!cancelled) {
           setSvg(renderedSvg)
-          setError(null)
+          setHasError(false)
           setIsLoading(false)
         }
-      } catch (err) {
+      } catch {
+        // On error, show the original markdown instead of error message
         if (!cancelled) {
-          console.error("Mermaid rendering error:", err)
-          setError("ダイアグラムの描画に失敗しました")
+          setHasError(true)
           setSvg("")
           setIsLoading(false)
         }
@@ -63,11 +68,11 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     }
   }, [chart, uniqueId])
 
-  if (error) {
+  // On error, show the original code block as markdown
+  if (hasError) {
     return (
-      <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
-        <p className="text-sm text-destructive">{error}</p>
-        <pre className="mt-2 text-xs text-muted-foreground overflow-x-auto whitespace-pre-wrap">{chart}</pre>
+      <div className="rounded-md bg-muted/50 p-4 overflow-x-auto">
+        <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">{chart}</pre>
       </div>
     )
   }

@@ -6,6 +6,7 @@ interface SessionData {
   authenticated: boolean
   isAdmin: boolean
   username: string
+  userId: number
 }
 
 interface AuthContextValue {
