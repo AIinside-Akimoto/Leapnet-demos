@@ -39,8 +39,22 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
               htmlLabels: true,
               useMaxWidth: true,
             },
+            // Suppress error rendering to DOM
+            suppressErrorRendering: true,
           })
           mermaidInitialized = true
+        }
+
+        // First, validate the syntax using parse
+        const isValid = await mermaid.parse(chart.trim(), { suppressErrors: true })
+        
+        if (!isValid) {
+          if (!cancelled) {
+            setHasError(true)
+            setSvg("")
+            setIsLoading(false)
+          }
+          return
         }
 
         const id = `mermaid${uniqueId}-${Math.random().toString(36).substring(2, 9)}`
@@ -67,6 +81,16 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
       cancelled = true
     }
   }, [chart, uniqueId])
+
+  // Clean up any mermaid error elements that may have been injected into the DOM
+  useEffect(() => {
+    const errorElements = document.querySelectorAll('[id^="d"]')
+    errorElements.forEach(el => {
+      if (el.textContent?.includes("Syntax error") || el.textContent?.includes("mermaid version")) {
+        el.remove()
+      }
+    })
+  }, [hasError])
 
   // On error, show the original code block as markdown
   if (hasError) {

@@ -123,3 +123,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide Mermaid error elements that get injected into DOM */
+#d[style*="position: absolute"],
+[id^="d"][style*="font-size: 16px"] {
+  display: none !important;
+}
