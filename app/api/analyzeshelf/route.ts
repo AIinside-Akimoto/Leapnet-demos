@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const sessions = await sql`
       SELECT s.*, u.username, u.is_admin 
       FROM sessions s 
-      JOIN users u ON s.user_id = u.id 
+      JOIN app_users u ON s.user_id = u.id 
       WHERE s.token = ${token} AND s.expires_at > NOW()
     `
 
@@ -35,6 +35,18 @@ export async function POST(request: NextRequest) {
 
     // Get form data from request
     const formData = await request.formData()
+    const imageFile = formData.get("image") as File | null
+    
+    if (!imageFile) {
+      return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
+    }
+
+    console.log("[v0] Image file:", imageFile.name, imageFile.size, imageFile.type)
+    console.log("[v0] API URL:", `${apiUrl}/analyze-shelf`)
+
+    // Create new FormData for external API
+    const externalFormData = new FormData()
+    externalFormData.append("image", imageFile)
     
     // Forward the request to the external API
     const response = await fetch(`${apiUrl}/analyze-shelf`, {
@@ -42,19 +54,30 @@ export async function POST(request: NextRequest) {
       headers: {
         "x-api-key": apiKey,
       },
-      body: formData,
+      body: externalFormData,
     })
 
+    console.log("[v0] API Response status:", response.status)
+    
+    const responseText = await response.text()
+    console.log("[v0] API Response text:", responseText.substring(0, 200))
+
     if (!response.ok) {
-      const errorText = await response.text()
       return NextResponse.json(
-        { error: `APIエラー: ${response.status}`, details: errorText },
+        { error: `APIエラー: ${response.status}`, details: responseText },
         { status: response.status }
       )
     }
 
-    const data = await response.json()
-    return NextResponse.json(data)
+    try {
+      const data = JSON.parse(responseText)
+      return NextResponse.json(data)
+    } catch {
+      return NextResponse.json(
+        { error: "APIレスポンスの解析に失敗しました", details: responseText },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error("Shelf analyzer API error:", error)
     return NextResponse.json(
