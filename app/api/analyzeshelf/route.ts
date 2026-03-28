@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     console.log("[v0] API Response status:", response.status)
     
     const responseText = await response.text()
-    console.log("[v0] API Response text:", responseText.substring(0, 200))
+    console.log("[v0] API Response FULL:", responseText)
 
     if (!response.ok) {
       return NextResponse.json(
