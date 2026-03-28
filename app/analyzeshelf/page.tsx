@@ -148,55 +148,28 @@ export default function AnalyzeShelfPage() {
   }
 
   async function handleSubmit() {
-    try {
-      console.log("[v0] handleSubmit START")
-      console.log("[v0] selectedFile:", selectedFile?.name)
-      
-      if (!selectedFile) {
-        setError("画像ファイルを選択してください")
-        return
-      }
+    if (!selectedFile) {
+      setError("画像ファイルを選択してください")
+      return
+    }
 
-      setIsLoading(true)
-      setError(null)
-      setResult(null)
+    setIsLoading(true)
+    setError(null)
+    setResult(null)
+
+    try {
       const formData = new FormData()
       formData.append("store_id", storeId)
       formData.append("shelf_id", shelfId)
       formData.append("timestamp", new Date().toISOString())
       formData.append("image", selectedFile)
-
-      console.log("[v0] FormData created, sending request...")
-      console.log("[v0] File:", selectedFile.name, selectedFile.size, "bytes")
       
-      let response
-      try {
-        response = await authFetch("/api/analyzeshelf", {
-          method: "POST",
-          body: formData,
-        })
-        console.log("[v0] Response received, status:", response.status)
-      } catch (fetchError) {
-        console.error("[v0] Fetch error:", fetchError)
-        throw new Error("リクエストの送信に失敗しました")
-      }
+      const response = await authFetch("/api/analyzeshelf", {
+        method: "POST",
+        body: formData,
+      })
 
-      let responseText
-      try {
-        responseText = await response.text()
-        console.log("[v0] Response text (first 300 chars):", responseText.substring(0, 300))
-      } catch (textError) {
-        console.error("[v0] Error reading response text:", textError)
-        throw new Error("レスポンスの読み取りに失敗しました")
-      }
-      
-      let data
-      try {
-        data = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error("[v0] Parse error. Response was:", responseText.substring(0, 500))
-        throw new Error("サーバーからの応答を解析できませんでした")
-      }
+      const data = await response.json()
 
       if (!response.ok) {
         throw new Error(data.error || "分析に失敗しました")
@@ -204,10 +177,9 @@ export default function AnalyzeShelfPage() {
 
       setResult(data)
     } catch (err) {
-      console.error("[v0] handleSubmit error:", err)
-      setError(err instanceof Error ? err.message : "分析中にエラーが発生しました")
+      const errorMessage = err instanceof Error ? err.message : "分析中にエラーが発生しました"
+      setError(errorMessage)
     } finally {
-      console.log("[v0] handleSubmit END")
       setIsLoading(false)
     }
   }
