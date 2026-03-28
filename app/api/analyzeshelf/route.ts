@@ -36,17 +36,24 @@ export async function POST(request: NextRequest) {
     // Get form data from request
     const formData = await request.formData()
     const imageFile = formData.get("image") as File | null
+    const storeId = formData.get("store_id") as string
+    const shelfId = formData.get("shelf_id") as string
+    const timestamp = formData.get("timestamp") as string
     
     if (!imageFile) {
       return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
 
     console.log("[v0] Image file:", imageFile.name, imageFile.size, imageFile.type)
+    console.log("[v0] store_id:", storeId, "shelf_id:", shelfId, "timestamp:", timestamp)
     console.log("[v0] API URL:", `${apiUrl}/analyze-shelf`)
 
-    // Create new FormData for external API
+    // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
     externalFormData.append("image", imageFile)
+    externalFormData.append("store_id", storeId || "store-001")
+    externalFormData.append("shelf_id", shelfId || "shelf-001")
+    externalFormData.append("timestamp", timestamp || new Date().toISOString())
     
     // Forward the request to the external API
     const response = await fetch(`${apiUrl}/analyze-shelf`, {
