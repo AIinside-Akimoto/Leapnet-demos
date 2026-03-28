@@ -127,19 +127,34 @@ export default function AnalyzeShelfPage() {
         ctx.lineWidth = 3
         ctx.strokeRect(x, y, width, height)
 
-        // Draw label background
-        const labelText = item.product_name || "不明"
-        ctx.font = "bold 14px sans-serif"
-        const textMetrics = ctx.measureText(labelText)
-        const labelHeight = 20
-        const labelPadding = 4
+        // Draw price tag box with product name if available
+        if (item.price_tag_box) {
+          const tagBox = item.price_tag_box
+          const tagX = tagBox.x_min * img.width
+          const tagY = tagBox.y_min * img.height
+          const tagWidth = (tagBox.x_max - tagBox.x_min) * img.width
+          const tagHeight = (tagBox.y_max - tagBox.y_min) * img.height
 
-        ctx.fillStyle = strokeColor
-        ctx.fillRect(x, y - labelHeight - 2, textMetrics.width + labelPadding * 2, labelHeight)
+          // Draw price tag box background
+          ctx.fillStyle = strokeColor
+          ctx.fillRect(tagX, tagY, tagWidth, tagHeight)
 
-        // Draw label text
-        ctx.fillStyle = "#ffffff"
-        ctx.fillText(labelText, x + labelPadding, y - 6)
+          // Draw price tag box border
+          ctx.strokeStyle = strokeColor
+          ctx.lineWidth = 2
+          ctx.strokeRect(tagX, tagY, tagWidth, tagHeight)
+
+          // Draw product name inside the price tag box
+          const labelText = item.product_name || "不明"
+          ctx.font = "bold 12px sans-serif"
+          ctx.fillStyle = "#ffffff"
+          
+          // Center text in the box
+          const textMetrics = ctx.measureText(labelText)
+          const textX = tagX + (tagWidth - textMetrics.width) / 2
+          const textY = tagY + tagHeight / 2 + 4
+          ctx.fillText(labelText, textX, textY)
+        }
       })
     }
     img.src = previewUrl
