@@ -169,12 +169,20 @@ export default function AnalyzeShelfPage() {
         body: formData,
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "分析に失敗しました")
+      const responseText = await response.text()
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch {
+        console.error("[v0] Failed to parse response:", responseText.substring(0, 100))
+        throw new Error("サーバーからの応答を解析できませんでした")
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "分析に失敗しました")
+      }
+
       setResult(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : "分析中にエラーが発生しました")
