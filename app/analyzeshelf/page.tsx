@@ -148,6 +148,9 @@ export default function AnalyzeShelfPage() {
   }
 
   async function handleSubmit() {
+    console.log("[v0] handleSubmit called")
+    console.log("[v0] selectedFile:", selectedFile?.name)
+    
     if (!selectedFile) {
       setError("画像ファイルを選択してください")
       return
@@ -164,7 +167,7 @@ export default function AnalyzeShelfPage() {
       formData.append("timestamp", new Date().toISOString())
       formData.append("image", selectedFile)
 
-      console.log("[v0] Sending request with FormData")
+      console.log("[v0] FormData created, sending request...")
       console.log("[v0] File:", selectedFile.name, selectedFile.size, "bytes")
       
       let response
