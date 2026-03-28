@@ -162,7 +162,7 @@ export default function AnalyzeShelfPage() {
       formData.append("store_id", storeId)
       formData.append("shelf_id", shelfId)
       formData.append("timestamp", new Date().toISOString())
-      formData.append("file", selectedFile)
+      formData.append("image", selectedFile)
 
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
