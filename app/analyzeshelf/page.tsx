@@ -97,53 +97,52 @@ export default function AnalyzeShelfPage() {
         
         console.log(`[v0] Item ${idx}: box=(${box.x_min.toFixed(2)},${box.y_min.toFixed(2)})-(${box.x_max.toFixed(2)},${box.y_max.toFixed(2)}) -> px=(${Math.round(x)},${Math.round(y)}) size=${Math.round(width)}x${Math.round(height)}`)
 
-          // Set color based on priority
-          let strokeColor: string
-          let fillColor: string
-          switch (item.priority) {
-            case "High":
-              strokeColor = "#ef4444" // red-500
-              fillColor = "rgba(239, 68, 68, 0.2)"
-              break
-            case "Medium":
-              strokeColor = "#eab308" // yellow-500
-              fillColor = "rgba(234, 179, 8, 0.2)"
-              break
-            case "Low":
-              strokeColor = "#22c55e" // green-500
-              fillColor = "rgba(34, 197, 94, 0.2)"
-              break
-            default:
-              strokeColor = "#6b7280"
-              fillColor = "rgba(107, 114, 128, 0.2)"
-          }
+        // Set color based on priority
+        let strokeColor: string
+        let fillColor: string
+        switch (item.priority) {
+          case "High":
+            strokeColor = "#ef4444" // red-500
+            fillColor = "rgba(239, 68, 68, 0.2)"
+            break
+          case "Medium":
+            strokeColor = "#eab308" // yellow-500
+            fillColor = "rgba(234, 179, 8, 0.2)"
+            break
+          case "Low":
+            strokeColor = "#22c55e" // green-500
+            fillColor = "rgba(34, 197, 94, 0.2)"
+            break
+          default:
+            strokeColor = "#6b7280"
+            fillColor = "rgba(107, 114, 128, 0.2)"
+        }
 
-          // Draw filled rectangle
-          ctx.fillStyle = fillColor
-          ctx.fillRect(x, y, width, height)
+        // Draw filled rectangle
+        ctx.fillStyle = fillColor
+        ctx.fillRect(x, y, width, height)
 
-          // Draw border
-          ctx.strokeStyle = strokeColor
-          ctx.lineWidth = 3
-          ctx.strokeRect(x, y, width, height)
+        // Draw border
+        ctx.strokeStyle = strokeColor
+        ctx.lineWidth = 3
+        ctx.strokeRect(x, y, width, height)
 
-          // Draw label background
-          const labelText = item.product_name || "不明"
-          ctx.font = "bold 14px sans-serif"
-          const textMetrics = ctx.measureText(labelText)
-          const labelHeight = 20
-          const labelPadding = 4
+        // Draw label background
+        const labelText = item.product_name || "不明"
+        ctx.font = "bold 14px sans-serif"
+        const textMetrics = ctx.measureText(labelText)
+        const labelHeight = 20
+        const labelPadding = 4
 
-          ctx.fillStyle = strokeColor
-          ctx.fillRect(x, y - labelHeight - 2, textMetrics.width + labelPadding * 2, labelHeight)
+        ctx.fillStyle = strokeColor
+        ctx.fillRect(x, y - labelHeight - 2, textMetrics.width + labelPadding * 2, labelHeight)
 
-          // Draw label text
-          ctx.fillStyle = "#ffffff"
-          ctx.fillText(labelText, x + labelPadding, y - 6)
-        })
-      }
-      img.src = previewUrl
+        // Draw label text
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText(labelText, x + labelPadding, y - 6)
+      })
     }
+    img.src = previewUrl
   }, [result, previewUrl])
 
   // Resize image to reduce file size for API limits (Vercel has ~4.5MB limit)
