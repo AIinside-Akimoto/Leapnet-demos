@@ -88,14 +88,15 @@ export default function AnalyzeShelfPage() {
       
       // Draw bounding boxes for each item
       result.analysis_result.items.forEach((item, idx) => {
-        const box = item.bounding_box
+        // Prioritize empty_space_box over bounding_box
+        const box = item.empty_space_box || item.bounding_box
         
         const x = box.x_min * img.width
         const y = box.y_min * img.height
         const width = (box.x_max - box.x_min) * img.width
         const height = (box.y_max - box.y_min) * img.height
         
-        console.log(`[v0] Item ${idx}: box=(${box.x_min.toFixed(2)},${box.y_min.toFixed(2)})-(${box.x_max.toFixed(2)},${box.y_max.toFixed(2)}) -> px=(${Math.round(x)},${Math.round(y)}) size=${Math.round(width)}x${Math.round(height)}`)
+        console.log(`[v0] Item ${idx}: using ${item.empty_space_box ? 'empty_space_box' : 'bounding_box'} box=(${box.x_min.toFixed(2)},${box.y_min.toFixed(2)})-(${box.x_max.toFixed(2)},${box.y_max.toFixed(2)}) -> px=(${Math.round(x)},${Math.round(y)}) size=${Math.round(width)}x${Math.round(height)}`)
 
         // Set color based on priority
         let strokeColor: string
