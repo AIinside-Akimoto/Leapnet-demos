@@ -137,13 +137,62 @@ export default function AnalyzeShelfPage() {
     }
   }, [result, previewUrl])
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Resize image to reduce file size for API limits (Vercel has ~4.5MB limit)
+  async function resizeImage(file: File, maxWidth: number = 1920, maxHeight: number = 1080, quality: number = 0.8): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        let { width, height } = img
+        
+        // Calculate new dimensions maintaining aspect ratio
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height)
+          width = Math.round(width * ratio)
+          height = Math.round(height * ratio)
+        }
+        
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height)
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const resizedFile = new File([blob], file.name, { type: "image/jpeg" })
+                console.log("[v0] Resized image:", file.size, "->", resizedFile.size, "bytes")
+                resolve(resizedFile)
+              } else {
+                resolve(file)
+              }
+            },
+            "image/jpeg",
+            quality
+          )
+        } else {
+          resolve(file)
+        }
+      }
+      img.onerror = () => resolve(file)
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
-      setSelectedFile(file)
-      setPreviewUrl(URL.createObjectURL(file))
-      setResult(null)
-      setError(null)
+      setIsLoading(true)
+      try {
+        const resizedFile = await resizeImage(file)
+        setSelectedFile(resizedFile)
+        setPreviewUrl(URL.createObjectURL(resizedFile))
+        setResult(null)
+        setError(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
