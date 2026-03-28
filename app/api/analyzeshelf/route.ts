@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
-    externalFormData.append("image", imageFile)
+    externalFormData.append("file", imageFile)
     externalFormData.append("store_id", storeId || "store-001")
     externalFormData.append("shelf_id", shelfId || "shelf-001")
     externalFormData.append("timestamp", timestamp || new Date().toISOString())
