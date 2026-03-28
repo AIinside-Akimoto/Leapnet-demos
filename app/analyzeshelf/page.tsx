@@ -148,19 +148,18 @@ export default function AnalyzeShelfPage() {
   }
 
   async function handleSubmit() {
-    console.log("[v0] handleSubmit called")
-    console.log("[v0] selectedFile:", selectedFile?.name)
-    
-    if (!selectedFile) {
-      setError("画像ファイルを選択してください")
-      return
-    }
-
-    setIsLoading(true)
-    setError(null)
-    setResult(null)
-
     try {
+      console.log("[v0] handleSubmit START")
+      console.log("[v0] selectedFile:", selectedFile?.name)
+      
+      if (!selectedFile) {
+        setError("画像ファイルを選択してください")
+        return
+      }
+
+      setIsLoading(true)
+      setError(null)
+      setResult(null)
       const formData = new FormData()
       formData.append("store_id", storeId)
       formData.append("shelf_id", shelfId)
@@ -205,8 +204,10 @@ export default function AnalyzeShelfPage() {
 
       setResult(data)
     } catch (err) {
+      console.error("[v0] handleSubmit error:", err)
       setError(err instanceof Error ? err.message : "分析中にエラーが発生しました")
     } finally {
+      console.log("[v0] handleSubmit END")
       setIsLoading(false)
     }
   }
