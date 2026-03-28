@@ -46,6 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
       const currentToken = getStoredToken()
+      
+      // For FormData, don't use Headers object as it can interfere with Content-Type
+      if (options.body instanceof FormData) {
+        const headers: Record<string, string> = {}
+        if (currentToken) {
+          headers["Authorization"] = `Bearer ${currentToken}`
+        }
+        return fetch(url, { ...options, headers })
+      }
+      
+      // For other requests, use Headers object
       const headers = new Headers(options.headers)
       if (currentToken) {
         headers.set("Authorization", `Bearer ${currentToken}`)
