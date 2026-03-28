@@ -77,16 +77,22 @@ export default function AnalyzeShelfPage() {
         canvas.width = img.width
         canvas.height = img.height
         
+        console.log("[v0] Image size:", img.width, "x", img.height)
+        
         // Draw the image
         ctx.drawImage(img, 0, 0)
         
         // Draw bounding boxes for each item
-        result.analysis_result.items.forEach((item) => {
+        result.analysis_result.items.forEach((item, idx) => {
           const box = item.bounding_box
+          console.log(`[v0] Item ${idx} bounding_box:`, box)
+          
           const x = box.x_min * img.width
           const y = box.y_min * img.height
           const width = (box.x_max - box.x_min) * img.width
           const height = (box.y_max - box.y_min) * img.height
+          
+          console.log(`[v0] Item ${idx} calculated:`, { x, y, width, height })
 
           // Set color based on priority
           let strokeColor: string
