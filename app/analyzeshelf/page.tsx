@@ -65,34 +65,37 @@ export default function AnalyzeShelfPage() {
 
   // Draw bounding boxes on canvas when result changes
   useEffect(() => {
-    if (result && previewUrl && canvasRef.current) {
-      const canvas = canvasRef.current
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
+    if (!result || !previewUrl || !canvasRef.current) return
+    
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
 
-      const img = new Image()
-      img.crossOrigin = "anonymous"
-      img.onload = () => {
-        imageRef.current = img
-        canvas.width = img.width
-        canvas.height = img.height
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      // Prevent duplicate drawing
+      if (imageRef.current === img) return
+      imageRef.current = img
+      
+      canvas.width = img.width
+      canvas.height = img.height
+      
+      console.log("[v0] Canvas/Image size:", img.width, "x", img.height)
+      
+      // Draw the image
+      ctx.drawImage(img, 0, 0)
+      
+      // Draw bounding boxes for each item
+      result.analysis_result.items.forEach((item, idx) => {
+        const box = item.bounding_box
         
-        console.log("[v0] Image size:", img.width, "x", img.height)
+        const x = box.x_min * img.width
+        const y = box.y_min * img.height
+        const width = (box.x_max - box.x_min) * img.width
+        const height = (box.y_max - box.y_min) * img.height
         
-        // Draw the image
-        ctx.drawImage(img, 0, 0)
-        
-        // Draw bounding boxes for each item
-        result.analysis_result.items.forEach((item, idx) => {
-          const box = item.bounding_box
-          console.log(`[v0] Item ${idx} bounding_box:`, box)
-          
-          const x = box.x_min * img.width
-          const y = box.y_min * img.height
-          const width = (box.x_max - box.x_min) * img.width
-          const height = (box.y_max - box.y_min) * img.height
-          
-          console.log(`[v0] Item ${idx} calculated:`, { x, y, width, height })
+        console.log(`[v0] Item ${idx}: box=(${box.x_min.toFixed(2)},${box.y_min.toFixed(2)})-(${box.x_max.toFixed(2)},${box.y_max.toFixed(2)}) -> px=(${Math.round(x)},${Math.round(y)}) size=${Math.round(width)}x${Math.round(height)}`)
 
           // Set color based on priority
           let strokeColor: string
