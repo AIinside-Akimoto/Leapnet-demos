@@ -148,6 +148,8 @@ export default function AnalyzeShelfPage() {
   }
 
   async function handleSubmit() {
+    console.log("[v0] === handleSubmit START ===")
+    
     if (!selectedFile) {
       setError("画像ファイルを選択してください")
       return
@@ -164,12 +166,25 @@ export default function AnalyzeShelfPage() {
       formData.append("timestamp", new Date().toISOString())
       formData.append("image", selectedFile)
       
+      console.log("[v0] Calling authFetch...")
+      
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
         body: formData,
       })
 
-      const data = await response.json()
+      console.log("[v0] Response status:", response.status)
+      
+      const responseText = await response.text()
+      console.log("[v0] Response text:", responseText.substring(0, 200))
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        console.error("[v0] JSON parse failed:", e)
+        throw new Error(`レスポンスの解析に失敗: ${responseText.substring(0, 100)}`)
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "分析に失敗しました")
@@ -177,9 +192,11 @@ export default function AnalyzeShelfPage() {
 
       setResult(data)
     } catch (err) {
+      console.error("[v0] Error:", err)
       const errorMessage = err instanceof Error ? err.message : "分析中にエラーが発生しました"
       setError(errorMessage)
     } finally {
+      console.log("[v0] === handleSubmit END ===")
       setIsLoading(false)
     }
   }
