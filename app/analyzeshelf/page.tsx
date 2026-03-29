@@ -79,12 +79,15 @@ export default function AnalyzeShelfPage() {
       
       // Draw the image
       ctx.drawImage(img, 0, 0)
-      
-      // Scale factor based on image size (for large images, make lines/text bigger)
-      const scale = Math.max(img.width, img.height) / 1000
-      const lineWidth = Math.max(3, Math.round(6 * scale))
-      const fontSize = Math.max(12, Math.round(14 * scale))
-      const labelPadding = Math.max(6, Math.round(10 * scale))
+
+      // Calculate the CSS display width of the canvas to match UI text size
+      const displayWidth = canvas.parentElement?.clientWidth || 800
+      const renderScale = img.width / displayWidth
+      // Target: 14px on screen → scale up to canvas pixel size
+      const fontSize = Math.round(14 * renderScale)
+      const smallFontSize = Math.round(12 * renderScale)
+      const labelPadding = Math.round(5 * renderScale)
+      const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item) => {
@@ -127,7 +130,6 @@ export default function AnalyzeShelfPage() {
         
         // Draw confidence percentage
         const confidenceText = `${Math.round(item.confidence * 100)}%`
-        const smallFontSize = Math.max(10, Math.round(12 * scale))
         ctx.font = `bold ${smallFontSize}px sans-serif`
         const confMetrics = ctx.measureText(confidenceText)
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
