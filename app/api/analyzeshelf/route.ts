@@ -33,23 +33,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get JSON body with blob URL
-    const body = await request.json()
-    const { blobUrl, storeId, shelfId, timestamp } = body
+    // Get form data from request
+    const formData = await request.formData()
+    const imageFile = formData.get("image") as File | null
+    const storeId = formData.get("store_id") as string
+    const shelfId = formData.get("shelf_id") as string
+    const timestamp = formData.get("timestamp") as string
     
-    if (!blobUrl) {
-      return NextResponse.json({ error: "画像URLが必要です" }, { status: 400 })
+    if (!imageFile) {
+      return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
 
-    // Fetch image from Blob storage
-    const imageResponse = await fetch(blobUrl)
-    if (!imageResponse.ok) {
-      return NextResponse.json({ error: "画像の取得に失敗しました" }, { status: 400 })
-    }
-    
-    const imageBlob = await imageResponse.blob()
-    const fileName = blobUrl.split("/").pop() || "image.jpg"
-    const imageFile = new File([imageBlob], fileName, { type: imageBlob.type })
+    console.log("[v0] Image file received:", imageFile.name, imageFile.size, "bytes")
 
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
@@ -78,6 +73,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const data = JSON.parse(responseText)
+      console.log("[v0] API response - items:", data.analysis_result?.items?.length, "first item:", data.analysis_result?.items?.[0]?.empty_space)
       return NextResponse.json(data)
     } catch {
       return NextResponse.json(
