@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "luc
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
 
-interface EmptySpace {
+interface BoundingBox {
   x_min: number
   y_min: number
   x_max: number
@@ -19,9 +19,14 @@ interface EmptySpace {
 
 interface AnalysisItem {
   product_name: string | null
-  status: "OOS"
+  status: "OOS" | "LOW_STOCK"
   confidence: number
-  empty_space: EmptySpace
+  // New API format (pixel coordinates)
+  empty_space?: BoundingBox
+  // Old API format (relative coordinates 0-1)
+  empty_space_box?: BoundingBox
+  bounding_box?: BoundingBox
+  priority?: "High" | "Medium" | "Low"
 }
 
 interface AnalysisResult {
@@ -74,16 +79,31 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
       
-      // Draw empty space boxes for each item (coordinates are in pixels)
+      // Draw empty space boxes for each item
       result.analysis_result.items.forEach((item, idx) => {
-        const box = item.empty_space
-        if (!box) return // Skip if no empty_space data
+        // Support both new (empty_space with pixels) and old (empty_space_box/bounding_box with relative) formats
+        const box = item.empty_space || item.empty_space_box || item.bounding_box
+        if (!box) return // Skip if no box data
         
-        // Coordinates are already in pixels
-        const x = box.x_min
-        const y = box.y_min
-        const width = box.x_max - box.x_min
-        const height = box.y_max - box.y_min
+        let x: number, y: number, width: number, height: number
+        
+        // Check if coordinates are relative (0-1) or pixel values
+        // If all values are <= 1, assume relative coordinates
+        const isRelative = box.x_min <= 1 && box.y_min <= 1 && box.x_max <= 1 && box.y_max <= 1
+        
+        if (isRelative) {
+          // Convert relative to pixel coordinates
+          x = box.x_min * img.width
+          y = box.y_min * img.height
+          width = (box.x_max - box.x_min) * img.width
+          height = (box.y_max - box.y_min) * img.height
+        } else {
+          // Already pixel coordinates
+          x = box.x_min
+          y = box.y_min
+          width = box.x_max - box.x_min
+          height = box.y_max - box.y_min
+        }
 
         // Color based on confidence (red for all OOS items)
         const strokeColor = "#ef4444" // red-500
