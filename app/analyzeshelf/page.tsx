@@ -19,14 +19,24 @@ interface EmptySpace {
 
 interface AnalysisItem {
   product_name: string | null
-  status: "OOS"
+  status: "OOS" | "LOW_STOCK"
   confidence: number
   empty_space: EmptySpace
+  estimated_replenishment_qty: number
+  priority: "High" | "Medium" | "Low"
+  location: {
+    row: number
+    position: "Left" | "Center" | "Right"
+  }
 }
 
 interface AnalysisResult {
   analysis_result: {
     shelf_id: string
+    summary: {
+      total_oos_items: number
+      total_replenish_items: number
+    }
     items: AnalysisItem[]
   }
 }
@@ -41,6 +51,7 @@ export default function AnalyzeShelfPage() {
   const [shelfId, setShelfId] = useState("SHELF001A")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -86,9 +97,10 @@ export default function AnalyzeShelfPage() {
         const width = box.x_max - box.x_min
         const height = box.y_max - box.y_min
 
-        // Color for OOS items
-        const strokeColor = "#ef4444"
-        const fillColor = "rgba(239, 68, 68, 0.3)"
+        // Color based on status
+        const isOOS = item.status === "OOS"
+        const strokeColor = isOOS ? "#ef4444" : "#f59e0b"
+        const fillColor = isOOS ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"
 
         // Draw filled rectangle
         ctx.fillStyle = fillColor
@@ -166,8 +178,15 @@ export default function AnalyzeShelfPage() {
       setIsLoading(true)
       try {
         const compressedFile = await compressImage(file)
+        // Get the actual pixel dimensions of the compressed image
+        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+          const img = new Image()
+          img.onload = () => resolve({ width: img.width, height: img.height })
+          img.src = URL.createObjectURL(compressedFile)
+        })
         setSelectedFile(compressedFile)
         setPreviewUrl(URL.createObjectURL(compressedFile))
+        setImageDimensions(dimensions)
         setResult(null)
         setError(null)
       } finally {
@@ -192,6 +211,10 @@ export default function AnalyzeShelfPage() {
       formData.append("shelf_id", shelfId)
       formData.append("timestamp", new Date().toISOString())
       formData.append("image", selectedFile)
+      if (imageDimensions) {
+        formData.append("image_width", String(imageDimensions.width))
+        formData.append("image_height", String(imageDimensions.height))
+      }
       
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
@@ -355,43 +378,59 @@ export default function AnalyzeShelfPage() {
               {result ? (
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="rounded-lg bg-red-500/10 p-4 text-center">
-                    <p className="text-2xl font-bold text-red-600">
-                      {result.analysis_result.items.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">空きスペース検出</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-red-500/10 p-3 text-center">
+                      <p className="text-2xl font-bold text-red-600">
+                        {result.analysis_result.summary?.total_oos_items ?? result.analysis_result.items.filter(i => i.status === "OOS").length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">欠品（OOS）</p>
+                    </div>
+                    <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {result.analysis_result.summary?.total_replenish_items ?? result.analysis_result.items.filter(i => i.status === "LOW_STOCK").length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">補充推奨（LOW_STOCK）</p>
+                    </div>
                   </div>
 
                   {/* Items List */}
                   <div className="space-y-2">
-                    {result.analysis_result.items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-3 w-3 rounded-full bg-red-500" />
-                          <div>
-                            <p className="font-medium">
-                              {item.product_name || "商品名不明"}
-                            </p>
-                            {item.empty_space && (
-                              <p className="text-xs text-muted-foreground">
-                                位置: ({item.empty_space.x_min}, {item.empty_space.y_min})
+                    {result.analysis_result.items.map((item, index) => {
+                      const isOOS = item.status === "OOS"
+                      const priorityColor = item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-lg border p-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`h-3 w-3 rounded-full ${isOOS ? "bg-red-500" : "bg-yellow-500"}`} />
+                            <div>
+                              <p className="font-medium">
+                                {item.product_name || "商品名不明"}
                               </p>
-                            )}
+                              <p className="text-xs text-muted-foreground">
+                                {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
+                                {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="destructive">欠品</Badge>
-                          <div className="text-right">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={isOOS ? "destructive" : "secondary"}>
+                              {isOOS ? "欠品" : "補充推奨"}
+                            </Badge>
+                            {item.priority && (
+                              <Badge variant={priorityColor as "destructive" | "secondary" | "outline"}>
+                                {item.priority}
+                              </Badge>
+                            )}
                             <p className="text-xs text-muted-foreground">
-                              信頼度: {Math.round((item.confidence || 0) * 100)}%
+                              {Math.round((item.confidence || 0) * 100)}%
                             </p>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               ) : (
