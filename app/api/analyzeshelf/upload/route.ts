@@ -42,9 +42,6 @@ export async function POST(request: Request) {
           }),
         }
       },
-      onUploadCompleted: async () => {
-        // Upload completed
-      },
     })
 
     return NextResponse.json(jsonResponse)
