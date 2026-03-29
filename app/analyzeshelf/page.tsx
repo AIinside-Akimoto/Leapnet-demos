@@ -122,32 +122,23 @@ export default function AnalyzeShelfPage() {
     img.src = previewUrl
   }, [result, previewUrl])
 
-  // Resize image to reduce file size for API limits (Vercel has ~4.5MB limit)
-  async function resizeImage(file: File, maxWidth: number = 1920, maxHeight: number = 1080, quality: number = 0.8): Promise<File> {
+  // Compress image without resizing to preserve original dimensions for accurate bounding box coordinates
+  async function compressImage(file: File, quality: number = 0.7): Promise<File> {
     return new Promise((resolve) => {
       const img = new Image()
       img.onload = () => {
-        let { width, height } = img
-        
-        // Calculate new dimensions maintaining aspect ratio
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height)
-          width = Math.round(width * ratio)
-          height = Math.round(height * ratio)
-        }
-        
         const canvas = document.createElement("canvas")
-        canvas.width = width
-        canvas.height = height
+        canvas.width = img.width
+        canvas.height = img.height
         
         const ctx = canvas.getContext("2d")
         if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height)
+          ctx.drawImage(img, 0, 0)
           canvas.toBlob(
             (blob) => {
-              if (blob) {
-                const resizedFile = new File([blob], file.name, { type: "image/jpeg" })
-                resolve(resizedFile)
+              if (blob && blob.size < file.size) {
+                const compressedFile = new File([blob], file.name, { type: "image/jpeg" })
+                resolve(compressedFile)
               } else {
                 resolve(file)
               }
@@ -169,9 +160,9 @@ export default function AnalyzeShelfPage() {
     if (file) {
       setIsLoading(true)
       try {
-        const resizedFile = await resizeImage(file)
-        setSelectedFile(resizedFile)
-        setPreviewUrl(URL.createObjectURL(resizedFile))
+        const compressedFile = await compressImage(file)
+        setSelectedFile(compressedFile)
+        setPreviewUrl(URL.createObjectURL(compressedFile))
         setResult(null)
         setError(null)
       } finally {
