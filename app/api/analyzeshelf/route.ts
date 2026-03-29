@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Image file:", imageFile.name, imageFile.size, imageFile.type)
     console.log("[v0] store_id:", storeId, "shelf_id:", shelfId, "timestamp:", timestamp)
-    console.log("[v0] API URL:", `${apiUrl}/analyze-shelf`)
+    console.log("[v0] API URL:", `${apiUrl}/analyze_shelf`)
 
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     externalFormData.append("timestamp", timestamp || new Date().toISOString())
     
     // Forward the request to the external API
-    const response = await fetch(`${apiUrl}/analyze-shelf`, {
+    const response = await fetch(`${apiUrl}/analyze_shelf`, {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
