@@ -60,7 +60,12 @@ export default function AnalyzeShelfPage() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    console.log("[v0] useEffect triggered - result:", !!result, "previewUrl:", !!previewUrl)
+    
     const img = new Image()
+    img.onerror = (e) => {
+      console.error("[v0] Image load error:", e)
+    }
     img.onload = () => {
       console.log("[v0] Canvas drawing - image loaded, size:", img.width, "x", img.height)
       console.log("[v0] Items to draw:", result.analysis_result.items.length)
