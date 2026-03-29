@@ -157,15 +157,34 @@ export default function AnalyzeShelfPage() {
     setResult(null)
 
     try {
-      const formData = new FormData()
-      formData.append("store_id", storeId)
-      formData.append("shelf_id", shelfId)
-      formData.append("timestamp", new Date().toISOString())
-      formData.append("image", selectedFile)
+      // Step 1: Upload image to Blob storage (no size limit)
+      const uploadFormData = new FormData()
+      uploadFormData.append("file", selectedFile)
       
+      const uploadResponse = await authFetch("/api/analyzeshelf/upload", {
+        method: "POST",
+        body: uploadFormData,
+      })
+
+      if (!uploadResponse.ok) {
+        const uploadError = await uploadResponse.json()
+        throw new Error(uploadError.error || "画像のアップロードに失敗しました")
+      }
+
+      const { url: blobUrl } = await uploadResponse.json()
+
+      // Step 2: Call analyze API with blob URL
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          blobUrl,
+          storeId,
+          shelfId,
+          timestamp: new Date().toISOString(),
+        }),
       })
 
       const responseText = await response.text()
