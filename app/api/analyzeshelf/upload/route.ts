@@ -9,6 +9,9 @@ export async function POST(request: Request) {
     const url = new URL(request.url)
     const token = url.searchParams.get("token")
     
+    console.log("[v0] Upload route called, URL:", request.url)
+    console.log("[v0] Token from query:", token ? "present" : "missing")
+    
     if (!token) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 })
     }
