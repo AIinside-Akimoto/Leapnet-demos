@@ -41,6 +41,7 @@ export default function AnalyzeShelfPage() {
   const [shelfId, setShelfId] = useState("SHELF001A")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [originalFile, setOriginalFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -60,8 +61,10 @@ export default function AnalyzeShelfPage() {
     if (!ctx) return
 
     const img = new Image()
-    img.crossOrigin = "anonymous"
     img.onload = () => {
+      console.log("[v0] Canvas drawing - image loaded, size:", img.width, "x", img.height)
+      console.log("[v0] Items to draw:", result.analysis_result.items.length)
+      
       imageRef.current = img
       
       canvas.width = img.width
@@ -72,6 +75,7 @@ export default function AnalyzeShelfPage() {
       
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item) => {
+        console.log("[v0] Drawing item:", item.product_name, item.empty_space)
         const box = item.empty_space
         if (!box) return
         
@@ -160,9 +164,13 @@ export default function AnalyzeShelfPage() {
     if (file) {
       setIsLoading(true)
       try {
+        // Store original file for preview display (to match API coordinates)
+        setOriginalFile(file)
+        setPreviewUrl(URL.createObjectURL(file))
+        
+        // Compress for API upload
         const compressedFile = await compressImage(file)
         setSelectedFile(compressedFile)
-        setPreviewUrl(URL.createObjectURL(compressedFile))
         setResult(null)
         setError(null)
       } finally {
