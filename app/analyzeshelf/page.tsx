@@ -77,6 +77,7 @@ export default function AnalyzeShelfPage() {
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item, idx) => {
         const box = item.empty_space
+        if (!box) return // Skip if no empty_space data
         
         // Coordinates are already in pixels
         const x = box.x_min
@@ -393,16 +394,18 @@ export default function AnalyzeShelfPage() {
                             <p className="font-medium">
                               {item.product_name || "商品名不明"}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              位置: ({item.empty_space.x_min}, {item.empty_space.y_min})
-                            </p>
+                            {item.empty_space && (
+                              <p className="text-xs text-muted-foreground">
+                                位置: ({item.empty_space.x_min}, {item.empty_space.y_min})
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="destructive">欠品</Badge>
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">
-                              信頼度: {Math.round(item.confidence * 100)}%
+                              信頼度: {Math.round((item.confidence || 0) * 100)}%
                             </p>
                           </div>
                         </div>
