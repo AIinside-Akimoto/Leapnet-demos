@@ -78,9 +78,14 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
       
+      // Scale factor based on image size (for large images, make lines/text bigger)
+      const scale = Math.max(img.width, img.height) / 1000
+      const lineWidth = Math.max(3, Math.round(6 * scale))
+      const fontSize = Math.max(14, Math.round(24 * scale))
+      const labelPadding = Math.max(6, Math.round(10 * scale))
+      
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item) => {
-        console.log("[v0] Drawing item:", item.product_name, item.empty_space)
         const box = item.empty_space
         if (!box) return
         
@@ -92,7 +97,7 @@ export default function AnalyzeShelfPage() {
 
         // Color for OOS items
         const strokeColor = "#ef4444"
-        const fillColor = "rgba(239, 68, 68, 0.2)"
+        const fillColor = "rgba(239, 68, 68, 0.3)"
 
         // Draw filled rectangle
         ctx.fillStyle = fillColor
@@ -100,32 +105,32 @@ export default function AnalyzeShelfPage() {
 
         // Draw border
         ctx.strokeStyle = strokeColor
-        ctx.lineWidth = 3
+        ctx.lineWidth = lineWidth
         ctx.strokeRect(x, y, width, height)
 
         // Draw label with product name
         const labelText = item.product_name || "空きスペース"
-        ctx.font = "bold 14px sans-serif"
+        ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
-        const labelHeight = 22
-        const labelPadding = 6
+        const labelHeight = fontSize + labelPadding * 2
 
         // Draw label background at top of box
         ctx.fillStyle = strokeColor
-        ctx.fillRect(x, y - labelHeight - 2, textMetrics.width + labelPadding * 2, labelHeight)
+        ctx.fillRect(x, y - labelHeight - 4, textMetrics.width + labelPadding * 2, labelHeight)
 
         // Draw label text
         ctx.fillStyle = "#ffffff"
-        ctx.fillText(labelText, x + labelPadding, y - 7)
+        ctx.fillText(labelText, x + labelPadding, y - labelPadding - 4)
         
         // Draw confidence percentage
         const confidenceText = `${Math.round(item.confidence * 100)}%`
-        ctx.font = "bold 12px sans-serif"
+        const smallFontSize = Math.max(12, Math.round(18 * scale))
+        ctx.font = `bold ${smallFontSize}px sans-serif`
         const confMetrics = ctx.measureText(confidenceText)
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-        ctx.fillRect(x + width - confMetrics.width - 8, y + 4, confMetrics.width + 8, 18)
+        ctx.fillRect(x + width - confMetrics.width - labelPadding * 2, y + labelPadding, confMetrics.width + labelPadding * 2, smallFontSize + labelPadding)
         ctx.fillStyle = "#ffffff"
-        ctx.fillText(confidenceText, x + width - confMetrics.width - 4, y + 17)
+        ctx.fillText(confidenceText, x + width - confMetrics.width - labelPadding, y + labelPadding + smallFontSize)
       })
     }
     img.src = previewUrl
