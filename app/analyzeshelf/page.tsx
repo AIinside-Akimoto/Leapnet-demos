@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
+import { upload } from "@vercel/blob/client"
 
 interface EmptySpace {
   x_min: number
@@ -157,30 +158,23 @@ export default function AnalyzeShelfPage() {
     setResult(null)
 
     try {
-      // Step 1: Upload image to Blob storage (no size limit)
-      const uploadFormData = new FormData()
-      uploadFormData.append("file", selectedFile)
-      
-      const uploadResponse = await authFetch("/api/analyzeshelf/upload", {
-        method: "POST",
-        body: uploadFormData,
+      // Step 1: Upload image directly to Blob storage from client (bypasses Vercel payload limit)
+      const blob = await upload(`shelf-images/${Date.now()}-${selectedFile.name}`, selectedFile, {
+        access: "public",
+        handleUploadUrl: "/api/analyzeshelf/upload",
+        clientPayload: JSON.stringify({
+          token: session?.token,
+        }),
       })
 
-      if (!uploadResponse.ok) {
-        const uploadError = await uploadResponse.json()
-        throw new Error(uploadError.error || "画像のアップロードに失敗しました")
-      }
-
-      const { url: blobUrl } = await uploadResponse.json()
-
-      // Step 2: Call analyze API with blob URL
+      // Step 2: Call analyze API with blob URL (server fetches from Blob and sends to external API)
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          blobUrl,
+          blobUrl: blob.url,
           storeId,
           shelfId,
           timestamp: new Date().toISOString(),
