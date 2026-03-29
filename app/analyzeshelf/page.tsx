@@ -149,7 +149,7 @@ export default function AnalyzeShelfPage() {
 
   async function handleSubmit() {
     if (!selectedFile) {
-      setError("画像ファイルを選択してくだ���い")
+      setError("画像ファイルを選択してください")
       return
     }
 
@@ -158,13 +158,16 @@ export default function AnalyzeShelfPage() {
     setResult(null)
 
     try {
+      console.log("[v0] Step 1: Starting Blob upload...")
       // Step 1: Upload image directly to Blob storage from client (bypasses Vercel payload limit)
       const blob = await upload(`shelf-images/${Date.now()}-${selectedFile.name}`, selectedFile, {
         access: "public",
         handleUploadUrl: `/api/analyzeshelf/upload?token=${encodeURIComponent(token || "")}`,
       })
+      console.log("[v0] Step 1: Blob upload complete, URL:", blob.url)
 
       // Step 2: Call analyze API with blob URL (server fetches from Blob and sends to external API)
+      console.log("[v0] Step 2: Calling analyze API...")
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
         headers: {
