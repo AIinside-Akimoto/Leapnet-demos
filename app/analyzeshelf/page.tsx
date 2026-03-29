@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
-import { upload } from "@vercel/blob/client"
 
 interface EmptySpace {
   x_min: number
@@ -136,14 +135,52 @@ export default function AnalyzeShelfPage() {
     img.src = previewUrl
   }, [result, previewUrl])
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Compress image by reducing quality (keep dimensions for accurate coordinates)
+  async function compressImage(file: File, quality: number = 0.6): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        canvas.width = img.width
+        canvas.height = img.height
+        
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.drawImage(img, 0, 0)
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size < file.size) {
+                const compressedFile = new File([blob], file.name, { type: "image/jpeg" })
+                resolve(compressedFile)
+              } else {
+                resolve(file)
+              }
+            },
+            "image/jpeg",
+            quality
+          )
+        } else {
+          resolve(file)
+        }
+      }
+      img.onerror = () => resolve(file)
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
-      // Use original file directly - no compression
-      setSelectedFile(file)
-      setPreviewUrl(URL.createObjectURL(file))
-      setResult(null)
-      setError(null)
+      setIsLoading(true)
+      try {
+        const compressedFile = await compressImage(file)
+        setSelectedFile(compressedFile)
+        setPreviewUrl(URL.createObjectURL(compressedFile))
+        setResult(null)
+        setError(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
