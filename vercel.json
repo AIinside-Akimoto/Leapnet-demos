@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/api/analyzeshelf/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

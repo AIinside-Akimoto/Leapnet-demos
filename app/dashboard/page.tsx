@@ -7,7 +7,6 @@ import {
   LogOut, 
   Bot, 
   FileSearch, 
-  Calculator,
   Settings,
   Sparkles,
   FileCode,
@@ -16,7 +15,8 @@ import {
   ExternalLink,
   Pencil,
   Trash2,
-  X
+  X,
+  ScanSearch
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -80,11 +80,11 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-amber-500/10 text-amber-600",
   },
   {
-    id: "analysis-ai",
-    title: "データ分析AI",
-    description: "データを分析してインサイトを提供するAIエージェントです",
-    icon: <Calculator className="h-6 w-6" />,
-    href: "/demo/analysis",
+    id: "shelf-watcher",
+    title: "棚ウォッチャー",
+    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
+    icon: <ScanSearch className="h-6 w-6" />,
+    href: "/analyzeshelf",
     color: "bg-sky-500/10 text-sky-600",
   },
 ]
