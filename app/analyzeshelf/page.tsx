@@ -62,20 +62,16 @@ export default function AnalyzeShelfPage() {
     const img = new Image()
     img.crossOrigin = "anonymous"
     img.onload = () => {
-      // Prevent duplicate drawing
-      if (imageRef.current === img) return
       imageRef.current = img
       
       canvas.width = img.width
       canvas.height = img.height
       
-      console.log("[v0] Canvas/Image size:", img.width, "x", img.height)
-      
       // Draw the image
       ctx.drawImage(img, 0, 0)
       
       // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item, idx) => {
+      result.analysis_result.items.forEach((item) => {
         const box = item.empty_space
         if (!box) return
         
@@ -84,11 +80,9 @@ export default function AnalyzeShelfPage() {
         const y = box.y_min
         const width = box.x_max - box.x_min
         const height = box.y_max - box.y_min
-        
-        console.log(`[v0] Item ${idx}: (${x}, ${y}) - ${width}x${height}`)
 
-        // Color based on confidence (red for all OOS items)
-        const strokeColor = "#ef4444" // red-500
+        // Color for OOS items
+        const strokeColor = "#ef4444"
         const fillColor = "rgba(239, 68, 68, 0.2)"
 
         // Draw filled rectangle
@@ -153,7 +147,6 @@ export default function AnalyzeShelfPage() {
             (blob) => {
               if (blob) {
                 const resizedFile = new File([blob], file.name, { type: "image/jpeg" })
-                console.log("[v0] Resized image:", file.size, "->", resizedFile.size, "bytes")
                 resolve(resizedFile)
               } else {
                 resolve(file)
@@ -188,8 +181,6 @@ export default function AnalyzeShelfPage() {
   }
 
   async function handleSubmit() {
-    console.log("[v0] === handleSubmit START ===")
-    
     if (!selectedFile) {
       setError("画像ファイルを選択してください")
       return
@@ -206,23 +197,17 @@ export default function AnalyzeShelfPage() {
       formData.append("timestamp", new Date().toISOString())
       formData.append("image", selectedFile)
       
-      console.log("[v0] Calling authFetch...")
-      
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
         body: formData,
       })
 
-      console.log("[v0] Response status:", response.status)
-      
       const responseText = await response.text()
-      console.log("[v0] Response text:", responseText.substring(0, 200))
       
       let data
       try {
         data = JSON.parse(responseText)
-      } catch (e) {
-        console.error("[v0] JSON parse failed:", e)
+      } catch {
         throw new Error(`レスポンスの解析に失敗: ${responseText.substring(0, 100)}`)
       }
 
@@ -232,11 +217,9 @@ export default function AnalyzeShelfPage() {
 
       setResult(data)
     } catch (err) {
-      console.error("[v0] Error:", err)
       const errorMessage = err instanceof Error ? err.message : "分析中にエラーが発生しました"
       setError(errorMessage)
     } finally {
-      console.log("[v0] === handleSubmit END ===")
       setIsLoading(false)
     }
   }

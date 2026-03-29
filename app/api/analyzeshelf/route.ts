@@ -44,10 +44,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
 
-    console.log("[v0] Image file:", imageFile.name, imageFile.size, imageFile.type)
-    console.log("[v0] store_id:", storeId, "shelf_id:", shelfId, "timestamp:", timestamp)
-    console.log("[v0] API URL:", `${apiUrl}/analyze_shelf`)
-
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
     externalFormData.append("file", imageFile)
@@ -64,10 +60,7 @@ export async function POST(request: NextRequest) {
       body: externalFormData,
     })
 
-    console.log("[v0] API Response status:", response.status)
-    
     const responseText = await response.text()
-    console.log("[v0] API Response FULL:", responseText)
 
     if (!response.ok) {
       return NextResponse.json(
