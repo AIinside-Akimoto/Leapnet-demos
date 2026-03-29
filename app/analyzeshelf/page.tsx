@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "luc
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
 
-interface BoundingBox {
+interface EmptySpace {
   x_min: number
   y_min: number
   x_max: number
@@ -19,26 +19,14 @@ interface BoundingBox {
 
 interface AnalysisItem {
   product_name: string | null
-  status: "OOS" | "LOW_STOCK"
-  location: {
-    row: number
-    position: string
-  }
-  estimated_replenishment_qty: number
-  priority: "High" | "Medium" | "Low"
+  status: "OOS"
   confidence: number
-  bounding_box: BoundingBox
-  empty_space_box: BoundingBox | null
-  price_tag_box: BoundingBox | null
+  empty_space: EmptySpace
 }
 
 interface AnalysisResult {
   analysis_result: {
     shelf_id: string
-    summary: {
-      total_oos_items: number
-      total_replenish_items: number
-    }
     items: AnalysisItem[]
   }
 }
@@ -86,38 +74,19 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
       
-      // Draw bounding boxes for each item
+      // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item, idx) => {
-        // Prioritize empty_space_box over bounding_box
-        const box = item.empty_space_box || item.bounding_box
+        const box = item.empty_space
         
-        const x = box.x_min * img.width
-        const y = box.y_min * img.height
-        const width = (box.x_max - box.x_min) * img.width
-        const height = (box.y_max - box.y_min) * img.height
-        
-        console.log(`[v0] Item ${idx}: using ${item.empty_space_box ? 'empty_space_box' : 'bounding_box'} box=(${box.x_min.toFixed(2)},${box.y_min.toFixed(2)})-(${box.x_max.toFixed(2)},${box.y_max.toFixed(2)}) -> px=(${Math.round(x)},${Math.round(y)}) size=${Math.round(width)}x${Math.round(height)}`)
+        // Coordinates are already in pixels
+        const x = box.x_min
+        const y = box.y_min
+        const width = box.x_max - box.x_min
+        const height = box.y_max - box.y_min
 
-        // Set color based on priority
-        let strokeColor: string
-        let fillColor: string
-        switch (item.priority) {
-          case "High":
-            strokeColor = "#ef4444" // red-500
-            fillColor = "rgba(239, 68, 68, 0.2)"
-            break
-          case "Medium":
-            strokeColor = "#eab308" // yellow-500
-            fillColor = "rgba(234, 179, 8, 0.2)"
-            break
-          case "Low":
-            strokeColor = "#22c55e" // green-500
-            fillColor = "rgba(34, 197, 94, 0.2)"
-            break
-          default:
-            strokeColor = "#6b7280"
-            fillColor = "rgba(107, 114, 128, 0.2)"
-        }
+        // Color based on confidence (red for all OOS items)
+        const strokeColor = "#ef4444" // red-500
+        const fillColor = "rgba(239, 68, 68, 0.2)"
 
         // Draw filled rectangle
         ctx.fillStyle = fillColor
@@ -128,34 +97,29 @@ export default function AnalyzeShelfPage() {
         ctx.lineWidth = 3
         ctx.strokeRect(x, y, width, height)
 
-        // Draw price tag box with product name if available
-        if (item.price_tag_box) {
-          const tagBox = item.price_tag_box
-          const tagX = tagBox.x_min * img.width
-          const tagY = tagBox.y_min * img.height
-          const tagWidth = (tagBox.x_max - tagBox.x_min) * img.width
-          const tagHeight = (tagBox.y_max - tagBox.y_min) * img.height
+        // Draw label with product name
+        const labelText = item.product_name || "空きスペース"
+        ctx.font = "bold 14px sans-serif"
+        const textMetrics = ctx.measureText(labelText)
+        const labelHeight = 22
+        const labelPadding = 6
 
-          // Draw price tag box background
-          ctx.fillStyle = strokeColor
-          ctx.fillRect(tagX, tagY, tagWidth, tagHeight)
+        // Draw label background at top of box
+        ctx.fillStyle = strokeColor
+        ctx.fillRect(x, y - labelHeight - 2, textMetrics.width + labelPadding * 2, labelHeight)
 
-          // Draw price tag box border
-          ctx.strokeStyle = strokeColor
-          ctx.lineWidth = 2
-          ctx.strokeRect(tagX, tagY, tagWidth, tagHeight)
-
-          // Draw product name inside the price tag box
-          const labelText = item.product_name || "不明"
-          ctx.font = "bold 12px sans-serif"
-          ctx.fillStyle = "#ffffff"
-          
-          // Center text in the box
-          const textMetrics = ctx.measureText(labelText)
-          const textX = tagX + (tagWidth - textMetrics.width) / 2
-          const textY = tagY + tagHeight / 2 + 4
-          ctx.fillText(labelText, textX, textY)
-        }
+        // Draw label text
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText(labelText, x + labelPadding, y - 7)
+        
+        // Draw confidence percentage
+        const confidenceText = `${Math.round(item.confidence * 100)}%`
+        ctx.font = "bold 12px sans-serif"
+        const confMetrics = ctx.measureText(confidenceText)
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
+        ctx.fillRect(x + width - confMetrics.width - 8, y + 4, confMetrics.width + 8, 18)
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText(confidenceText, x + width - confMetrics.width - 4, y + 17)
       })
     }
     img.src = previewUrl
@@ -274,29 +238,7 @@ export default function AnalyzeShelfPage() {
     }
   }
 
-  function getPriorityColor(priority: string) {
-    switch (priority) {
-      case "High":
-        return "bg-red-500"
-      case "Medium":
-        return "bg-yellow-500"
-      case "Low":
-        return "bg-green-500"
-      default:
-        return "bg-gray-500"
-    }
-  }
 
-  function getStatusLabel(status: string) {
-    switch (status) {
-      case "OOS":
-        return "欠品"
-      case "LOW_STOCK":
-        return "補充推奨"
-      default:
-        return status
-    }
-  }
 
   if (sessionLoading || !session?.authenticated) {
     return (
@@ -425,25 +367,17 @@ export default function AnalyzeShelfPage() {
           <Card>
             <CardHeader>
               <CardTitle>分析結果</CardTitle>
-              <CardDescription>検出された欠品・補充推奨商品</CardDescription>
+              <CardDescription>検出された空きスペース（欠品箇所）</CardDescription>
             </CardHeader>
             <CardContent>
               {result ? (
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-lg bg-red-500/10 p-4 text-center">
-                      <p className="text-2xl font-bold text-red-600">
-                        {result.analysis_result.summary.total_oos_items}
-                      </p>
-                      <p className="text-sm text-muted-foreground">欠品</p>
-                    </div>
-                    <div className="rounded-lg bg-yellow-500/10 p-4 text-center">
-                      <p className="text-2xl font-bold text-yellow-600">
-                        {result.analysis_result.summary.total_replenish_items}
-                      </p>
-                      <p className="text-sm text-muted-foreground">補充推奨</p>
-                    </div>
+                  <div className="rounded-lg bg-red-500/10 p-4 text-center">
+                    <p className="text-2xl font-bold text-red-600">
+                      {result.analysis_result.items.length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">空きスペース検出</p>
                   </div>
 
                   {/* Items List */}
@@ -454,24 +388,21 @@ export default function AnalyzeShelfPage() {
                         className="flex items-center justify-between rounded-lg border p-3"
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`h-3 w-3 rounded-full ${getPriorityColor(item.priority)}`} />
+                          <div className="h-3 w-3 rounded-full bg-red-500" />
                           <div>
                             <p className="font-medium">
                               {item.product_name || "商品名不明"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {item.location.row}段目・{item.location.position}
+                              位置: ({item.empty_space.x_min}, {item.empty_space.y_min})
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={item.status === "OOS" ? "destructive" : "secondary"}>
-                            {getStatusLabel(item.status)}
-                          </Badge>
+                          <Badge variant="destructive">欠品</Badge>
                           <div className="text-right">
-                            <p className="text-sm font-medium">+{item.estimated_replenishment_qty}</p>
                             <p className="text-xs text-muted-foreground">
-                              {Math.round(item.confidence * 100)}%
+                              信頼度: {Math.round(item.confidence * 100)}%
                             </p>
                           </div>
                         </div>
@@ -495,12 +426,7 @@ export default function AnalyzeShelfPage() {
             <CardHeader>
               <CardTitle>検出結果の可視化</CardTitle>
               <CardDescription>
-                画像上に検出された商品の位置を表示しています。
-                <span className="ml-2">
-                  <span className="inline-block h-3 w-3 rounded-full bg-red-500 mr-1" />High
-                  <span className="inline-block h-3 w-3 rounded-full bg-yellow-500 mx-1 ml-3" />Medium
-                  <span className="inline-block h-3 w-3 rounded-full bg-green-500 mx-1 ml-3" />Low
-                </span>
+                画像上に検出された空きスペースを赤色の四角で表示しています。
               </CardDescription>
             </CardHeader>
             <CardContent>
