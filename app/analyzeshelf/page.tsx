@@ -157,26 +157,14 @@ export default function AnalyzeShelfPage() {
     setResult(null)
 
     try {
-      // Get API config from server (to keep API key secure)
-      const configResponse = await authFetch("/api/analyzeshelf/config")
-      if (!configResponse.ok) {
-        const configError = await configResponse.json()
-        throw new Error(configError.error || "API設定の取得に失敗しました")
-      }
-      const { apiUrl, apiKey } = await configResponse.json()
-
-      // Send image directly to external API (bypasses Vercel payload limit)
       const formData = new FormData()
       formData.append("store_id", storeId)
       formData.append("shelf_id", shelfId)
       formData.append("timestamp", new Date().toISOString())
-      formData.append("file", selectedFile)
+      formData.append("image", selectedFile)
       
-      const response = await fetch(apiUrl, {
+      const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-        },
         body: formData,
       })
 
