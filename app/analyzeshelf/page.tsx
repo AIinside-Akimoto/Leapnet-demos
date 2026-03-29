@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
-import { upload } from "@vercel/blob/client"
 
 interface EmptySpace {
   x_min: number
@@ -60,16 +59,8 @@ export default function AnalyzeShelfPage() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    console.log("[v0] useEffect triggered - result:", !!result, "previewUrl:", !!previewUrl)
-    
     const img = new Image()
-    img.onerror = (e) => {
-      console.error("[v0] Image load error:", e)
-    }
     img.onload = () => {
-      console.log("[v0] Canvas drawing - image loaded, size:", img.width, "x", img.height)
-      console.log("[v0] Items to draw:", result.analysis_result.items.length)
-      
       imageRef.current = img
       
       canvas.width = img.width
@@ -136,14 +127,52 @@ export default function AnalyzeShelfPage() {
     img.src = previewUrl
   }, [result, previewUrl])
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Compress image by reducing quality (keep dimensions for accurate coordinates)
+  async function compressImage(file: File, quality: number = 0.5): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        canvas.width = img.width
+        canvas.height = img.height
+        
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.drawImage(img, 0, 0)
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size < file.size) {
+                const compressedFile = new File([blob], file.name, { type: "image/jpeg" })
+                resolve(compressedFile)
+              } else {
+                resolve(file)
+              }
+            },
+            "image/jpeg",
+            quality
+          )
+        } else {
+          resolve(file)
+        }
+      }
+      img.onerror = () => resolve(file)
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
-      // Use original file without compression for accurate API analysis
-      setSelectedFile(file)
-      setPreviewUrl(URL.createObjectURL(file))
-      setResult(null)
-      setError(null)
+      setIsLoading(true)
+      try {
+        const compressedFile = await compressImage(file)
+        setSelectedFile(compressedFile)
+        setPreviewUrl(URL.createObjectURL(compressedFile))
+        setResult(null)
+        setError(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -158,27 +187,15 @@ export default function AnalyzeShelfPage() {
     setResult(null)
 
     try {
-      console.log("[v0] Step 1: Starting Blob upload...")
-      // Step 1: Upload image directly to Blob storage from client (bypasses Vercel payload limit)
-      const blob = await upload(`shelf-images/${Date.now()}-${selectedFile.name}`, selectedFile, {
-        access: "public",
-        handleUploadUrl: `/api/analyzeshelf/upload?token=${encodeURIComponent(token || "")}`,
-      })
-      console.log("[v0] Step 1: Blob upload complete, URL:", blob.url)
-
-      // Step 2: Call analyze API with blob URL (server fetches from Blob and sends to external API)
-      console.log("[v0] Step 2: Calling analyze API...")
+      const formData = new FormData()
+      formData.append("store_id", storeId)
+      formData.append("shelf_id", shelfId)
+      formData.append("timestamp", new Date().toISOString())
+      formData.append("image", selectedFile)
+      
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          blobUrl: blob.url,
-          storeId,
-          shelfId,
-          timestamp: new Date().toISOString(),
-        }),
+        body: formData,
       })
 
       const responseText = await response.text()
