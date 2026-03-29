@@ -69,8 +69,15 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
       
+      // Calculate display scale (canvas actual size vs CSS display size)
+      const displayWidth = canvas.offsetWidth || canvas.width
+      const displayHeight = canvas.offsetHeight || canvas.height
+      const scaleX = displayWidth / canvas.width
+      const scaleY = displayHeight / canvas.height
+      
       // Scale factor based on image size (for large images, make lines/text bigger)
-      const scale = Math.max(img.width, img.height) / 1000
+      const baseScale = Math.max(img.width, img.height) / 1000
+      const scale = Math.max(baseScale * scaleX, baseScale * scaleY)
       const lineWidth = Math.max(3, Math.round(6 * scale))
       const fontSize = Math.max(14, Math.round(24 * scale))
       const labelPadding = Math.max(6, Math.round(10 * scale))
@@ -415,7 +422,7 @@ export default function AnalyzeShelfPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-auto rounded-lg border">
-                <canvas ref={canvasRef} className="max-w-full" />
+                <canvas ref={canvasRef} className="max-h-[600px] w-full" style={{ display: 'block' }} />
               </div>
             </CardContent>
           </Card>
