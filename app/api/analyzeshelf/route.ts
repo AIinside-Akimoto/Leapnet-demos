@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
 
+    console.log("[v0] Image file received:", imageFile.name, imageFile.size, "bytes")
+
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
     externalFormData.append("file", imageFile)
@@ -71,6 +73,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const data = JSON.parse(responseText)
+      console.log("[v0] API response - items:", data.analysis_result?.items?.length, "first item:", data.analysis_result?.items?.[0]?.empty_space)
       return NextResponse.json(data)
     } catch {
       return NextResponse.json(
