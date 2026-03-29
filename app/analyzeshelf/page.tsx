@@ -135,7 +135,7 @@ export default function AnalyzeShelfPage() {
   }, [result, previewUrl])
 
   // Compress image by reducing quality (keep dimensions for accurate coordinates)
-  async function compressImage(file: File, quality: number = 0.5): Promise<File> {
+  async function compressImage(file: File, quality: number = 0.8): Promise<File> {
     return new Promise((resolve) => {
       const img = new Image()
       img.onload = () => {
