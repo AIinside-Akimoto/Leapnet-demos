@@ -5,33 +5,33 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client"
 // Handle client-side upload - generates upload token
 export async function POST(request: Request) {
   try {
+    // Get token from query parameter
+    const url = new URL(request.url)
+    const token = url.searchParams.get("token")
+    
+    if (!token) {
+      return NextResponse.json({ error: "認証が必要です" }, { status: 401 })
+    }
+
+    const sql = neon(process.env.DATABASE_URL!)
+    
+    const sessions = await sql`
+      SELECT s.*, u.username, u.is_admin 
+      FROM sessions s 
+      JOIN app_users u ON s.user_id = u.id 
+      WHERE s.token = ${token} AND s.expires_at > NOW()
+    `
+
+    if (sessions.length === 0) {
+      return NextResponse.json({ error: "無効なセッションです" }, { status: 401 })
+    }
+
     const body = (await request.json()) as HandleUploadBody
 
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
-        // Verify authentication from client payload
-        const payload = clientPayload ? JSON.parse(clientPayload) : null
-        const token = payload?.token
-        
-        if (!token) {
-          throw new Error("認証が必要です")
-        }
-
-        const sql = neon(process.env.DATABASE_URL!)
-        
-        const sessions = await sql`
-          SELECT s.*, u.username, u.is_admin 
-          FROM sessions s 
-          JOIN app_users u ON s.user_id = u.id 
-          WHERE s.token = ${token} AND s.expires_at > NOW()
-        `
-
-        if (sessions.length === 0) {
-          throw new Error("無効なセッションです")
-        }
-
+      onBeforeGenerateToken: async () => {
         return {
           allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/heic"],
           tokenPayload: JSON.stringify({

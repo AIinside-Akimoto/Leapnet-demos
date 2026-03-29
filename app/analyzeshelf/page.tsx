@@ -161,10 +161,7 @@ export default function AnalyzeShelfPage() {
       // Step 1: Upload image directly to Blob storage from client (bypasses Vercel payload limit)
       const blob = await upload(`shelf-images/${Date.now()}-${selectedFile.name}`, selectedFile, {
         access: "public",
-        handleUploadUrl: "/api/analyzeshelf/upload",
-        clientPayload: JSON.stringify({
-          token: session?.token,
-        }),
+        handleUploadUrl: `/api/analyzeshelf/upload?token=${encodeURIComponent(session?.token || "")}`,
       })
 
       // Step 2: Call analyze API with blob URL (server fetches from Blob and sends to external API)
