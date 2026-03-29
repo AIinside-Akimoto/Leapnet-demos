@@ -41,7 +41,6 @@ export default function AnalyzeShelfPage() {
   const [shelfId, setShelfId] = useState("SHELF001A")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [originalFile, setOriginalFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -174,13 +173,11 @@ export default function AnalyzeShelfPage() {
     if (file) {
       setIsLoading(true)
       try {
-        // Store original file for preview display (to match API coordinates)
-        setOriginalFile(file)
-        setPreviewUrl(URL.createObjectURL(file))
-        
         // Compress for API upload
         const compressedFile = await compressImage(file)
         setSelectedFile(compressedFile)
+        // Use the same compressed file for preview to match API coordinates
+        setPreviewUrl(URL.createObjectURL(compressedFile))
         setResult(null)
         setError(null)
       } finally {
