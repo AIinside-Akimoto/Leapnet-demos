@@ -30,11 +30,13 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as HandleUploadBody
+    console.log("[v0] Upload body type:", body.type)
 
     const jsonResponse = await handleUpload({
       body,
       request,
       onBeforeGenerateToken: async () => {
+        console.log("[v0] onBeforeGenerateToken called")
         return {
           allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/heic"],
           tokenPayload: JSON.stringify({
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
       },
     })
 
+    console.log("[v0] handleUpload response:", JSON.stringify(jsonResponse))
     return NextResponse.json(jsonResponse)
   } catch (error) {
     console.error("Upload error:", error)
