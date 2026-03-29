@@ -34,7 +34,7 @@ interface AnalysisResult {
 
 export default function AnalyzeShelfPage() {
   const router = useRouter()
-  const { session, sessionLoading, authFetch } = useAuth()
+  const { token, session, sessionLoading, authFetch } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
 
@@ -161,7 +161,7 @@ export default function AnalyzeShelfPage() {
       // Step 1: Upload image directly to Blob storage from client (bypasses Vercel payload limit)
       const blob = await upload(`shelf-images/${Date.now()}-${selectedFile.name}`, selectedFile, {
         access: "public",
-        handleUploadUrl: `/api/analyzeshelf/upload?token=${encodeURIComponent(session?.token || "")}`,
+        handleUploadUrl: `/api/analyzeshelf/upload?token=${encodeURIComponent(token || "")}`,
       })
 
       // Step 2: Call analyze API with blob URL (server fetches from Blob and sends to external API)
