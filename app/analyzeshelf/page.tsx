@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "luc
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
 
-interface FrontFaceGap {
+interface EmptySpace {
   x_min: number
   y_min: number
   x_max: number
@@ -21,13 +21,25 @@ interface AnalysisItem {
   product_name: string | null
   status: "OOS" | "LOW_STOCK"
   confidence: number
-  front_face_gap: FrontFaceGap
+  empty_space: EmptySpace
+  estimated_replenishment_qty: number
+  priority: "High" | "Medium" | "Low"
+  location: {
+    row: number
+    position: "Left" | "Center" | "Right"
+  }
 }
 
 interface AnalysisResult {
   analysis_result: {
     shelf_id: string
     summary: {
+      total_oos_items: number
+      total_replenish_items: number
+    }
+    items: AnalysisItem[]
+  }
+}
       total_oos_items: number
       total_replenish_items: number
     }
@@ -85,7 +97,7 @@ export default function AnalyzeShelfPage() {
       
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item) => {
-        const box = item.front_face_gap
+        const box = item.empty_space
         if (!box) return
         
         // Coordinates are in pixels
@@ -374,17 +386,26 @@ export default function AnalyzeShelfPage() {
               {result ? (
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="rounded-lg bg-red-500/10 p-4 text-center">
-                    <p className="text-2xl font-bold text-red-600">
-                      {result.analysis_result.items.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">前面フェイス欠損検出</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-red-500/10 p-3 text-center">
+                      <p className="text-2xl font-bold text-red-600">
+                        {result.analysis_result.summary?.total_oos_items ?? result.analysis_result.items.filter(i => i.status === "OOS").length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">欠品（OOS）</p>
+                    </div>
+                    <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {result.analysis_result.summary?.total_replenish_items ?? result.analysis_result.items.filter(i => i.status === "LOW_STOCK").length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">補充推奨（LOW_STOCK）</p>
+                    </div>
                   </div>
 
                   {/* Items List */}
                   <div className="space-y-2">
                     {result.analysis_result.items.map((item, index) => {
                       const isOOS = item.status === "OOS"
+                      const priorityColor = item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"
                       return (
                         <div
                           key={index}
@@ -396,12 +417,21 @@ export default function AnalyzeShelfPage() {
                               <p className="font-medium">
                                 {item.product_name || "商品名不明"}
                               </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
+                                {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant={isOOS ? "destructive" : "secondary"}>
-                              {isOOS ? "欠品" : "低在庫"}
+                              {isOOS ? "欠品" : "補充推奨"}
                             </Badge>
+                            {item.priority && (
+                              <Badge variant={priorityColor as "destructive" | "secondary" | "outline"}>
+                                {item.priority}
+                              </Badge>
+                            )}
                             <p className="text-xs text-muted-foreground">
                               {Math.round((item.confidence || 0) * 100)}%
                             </p>
