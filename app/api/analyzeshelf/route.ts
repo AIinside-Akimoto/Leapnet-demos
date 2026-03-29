@@ -33,20 +33,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get form data from request
-    const formData = await request.formData()
-    const imageFile = formData.get("image") as File | null
-    const storeId = formData.get("store_id") as string
-    const shelfId = formData.get("shelf_id") as string
-    const timestamp = formData.get("timestamp") as string
+    // Get JSON body with blob URL
+    const body = await request.json()
+    const { blobUrl, storeId, shelfId, timestamp } = body
     
-    if (!imageFile) {
-      return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
+    if (!blobUrl) {
+      return NextResponse.json({ error: "画像URLが必要です" }, { status: 400 })
     }
 
-    console.log("[v0] Image file:", imageFile.name, imageFile.size, imageFile.type)
-    console.log("[v0] store_id:", storeId, "shelf_id:", shelfId, "timestamp:", timestamp)
-    console.log("[v0] API URL:", `${apiUrl}/analyze-shelf`)
+    // Fetch image from Blob storage
+    const imageResponse = await fetch(blobUrl)
+    if (!imageResponse.ok) {
+      return NextResponse.json({ error: "画像の取得に失敗しました" }, { status: 400 })
+    }
+    
+    const imageBlob = await imageResponse.blob()
+    const fileName = blobUrl.split("/").pop() || "image.jpg"
+    const imageFile = new File([imageBlob], fileName, { type: imageBlob.type })
 
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
     externalFormData.append("timestamp", timestamp || new Date().toISOString())
     
     // Forward the request to the external API
-    const response = await fetch(`${apiUrl}/analyze-shelf`, {
+    const response = await fetch(`${apiUrl}/analyze_shelf`, {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
@@ -64,10 +67,7 @@ export async function POST(request: NextRequest) {
       body: externalFormData,
     })
 
-    console.log("[v0] API Response status:", response.status)
-    
     const responseText = await response.text()
-    console.log("[v0] API Response FULL:", responseText)
 
     if (!response.ok) {
       return NextResponse.json(

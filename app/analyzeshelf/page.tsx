@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
+import { upload } from "@vercel/blob/client"
 
 interface EmptySpace {
   x_min: number
@@ -33,7 +34,7 @@ interface AnalysisResult {
 
 export default function AnalyzeShelfPage() {
   const router = useRouter()
-  const { session, sessionLoading, authFetch } = useAuth()
+  const { token, session, sessionLoading, authFetch } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
 
@@ -59,23 +60,32 @@ export default function AnalyzeShelfPage() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    console.log("[v0] useEffect triggered - result:", !!result, "previewUrl:", !!previewUrl)
+    
     const img = new Image()
-    img.crossOrigin = "anonymous"
+    img.onerror = (e) => {
+      console.error("[v0] Image load error:", e)
+    }
     img.onload = () => {
-      // Prevent duplicate drawing
-      if (imageRef.current === img) return
+      console.log("[v0] Canvas drawing - image loaded, size:", img.width, "x", img.height)
+      console.log("[v0] Items to draw:", result.analysis_result.items.length)
+      
       imageRef.current = img
       
       canvas.width = img.width
       canvas.height = img.height
       
-      console.log("[v0] Canvas/Image size:", img.width, "x", img.height)
-      
       // Draw the image
       ctx.drawImage(img, 0, 0)
       
+      // Scale factor based on image size (for large images, make lines/text bigger)
+      const scale = Math.max(img.width, img.height) / 1000
+      const lineWidth = Math.max(3, Math.round(6 * scale))
+      const fontSize = Math.max(14, Math.round(24 * scale))
+      const labelPadding = Math.max(6, Math.round(10 * scale))
+      
       // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item, idx) => {
+      result.analysis_result.items.forEach((item) => {
         const box = item.empty_space
         if (!box) return
         
@@ -84,12 +94,10 @@ export default function AnalyzeShelfPage() {
         const y = box.y_min
         const width = box.x_max - box.x_min
         const height = box.y_max - box.y_min
-        
-        console.log(`[v0] Item ${idx}: (${x}, ${y}) - ${width}x${height}`)
 
-        // Color based on confidence (red for all OOS items)
-        const strokeColor = "#ef4444" // red-500
-        const fillColor = "rgba(239, 68, 68, 0.2)"
+        // Color for OOS items
+        const strokeColor = "#ef4444"
+        const fillColor = "rgba(239, 68, 68, 0.3)"
 
         // Draw filled rectangle
         ctx.fillStyle = fillColor
@@ -97,99 +105,49 @@ export default function AnalyzeShelfPage() {
 
         // Draw border
         ctx.strokeStyle = strokeColor
-        ctx.lineWidth = 3
+        ctx.lineWidth = lineWidth
         ctx.strokeRect(x, y, width, height)
 
         // Draw label with product name
         const labelText = item.product_name || "空きスペース"
-        ctx.font = "bold 14px sans-serif"
+        ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
-        const labelHeight = 22
-        const labelPadding = 6
+        const labelHeight = fontSize + labelPadding * 2
 
         // Draw label background at top of box
         ctx.fillStyle = strokeColor
-        ctx.fillRect(x, y - labelHeight - 2, textMetrics.width + labelPadding * 2, labelHeight)
+        ctx.fillRect(x, y - labelHeight - 4, textMetrics.width + labelPadding * 2, labelHeight)
 
         // Draw label text
         ctx.fillStyle = "#ffffff"
-        ctx.fillText(labelText, x + labelPadding, y - 7)
+        ctx.fillText(labelText, x + labelPadding, y - labelPadding - 4)
         
         // Draw confidence percentage
         const confidenceText = `${Math.round(item.confidence * 100)}%`
-        ctx.font = "bold 12px sans-serif"
+        const smallFontSize = Math.max(12, Math.round(18 * scale))
+        ctx.font = `bold ${smallFontSize}px sans-serif`
         const confMetrics = ctx.measureText(confidenceText)
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-        ctx.fillRect(x + width - confMetrics.width - 8, y + 4, confMetrics.width + 8, 18)
+        ctx.fillRect(x + width - confMetrics.width - labelPadding * 2, y + labelPadding, confMetrics.width + labelPadding * 2, smallFontSize + labelPadding)
         ctx.fillStyle = "#ffffff"
-        ctx.fillText(confidenceText, x + width - confMetrics.width - 4, y + 17)
+        ctx.fillText(confidenceText, x + width - confMetrics.width - labelPadding, y + labelPadding + smallFontSize)
       })
     }
     img.src = previewUrl
   }, [result, previewUrl])
 
-  // Resize image to reduce file size for API limits (Vercel has ~4.5MB limit)
-  async function resizeImage(file: File, maxWidth: number = 1920, maxHeight: number = 1080, quality: number = 0.8): Promise<File> {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => {
-        let { width, height } = img
-        
-        // Calculate new dimensions maintaining aspect ratio
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height)
-          width = Math.round(width * ratio)
-          height = Math.round(height * ratio)
-        }
-        
-        const canvas = document.createElement("canvas")
-        canvas.width = width
-        canvas.height = height
-        
-        const ctx = canvas.getContext("2d")
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height)
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                const resizedFile = new File([blob], file.name, { type: "image/jpeg" })
-                console.log("[v0] Resized image:", file.size, "->", resizedFile.size, "bytes")
-                resolve(resizedFile)
-              } else {
-                resolve(file)
-              }
-            },
-            "image/jpeg",
-            quality
-          )
-        } else {
-          resolve(file)
-        }
-      }
-      img.onerror = () => resolve(file)
-      img.src = URL.createObjectURL(file)
-    })
-  }
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
-      setIsLoading(true)
-      try {
-        const resizedFile = await resizeImage(file)
-        setSelectedFile(resizedFile)
-        setPreviewUrl(URL.createObjectURL(resizedFile))
-        setResult(null)
-        setError(null)
-      } finally {
-        setIsLoading(false)
-      }
+      // Use original file without compression for accurate API analysis
+      setSelectedFile(file)
+      setPreviewUrl(URL.createObjectURL(file))
+      setResult(null)
+      setError(null)
     }
   }
 
   async function handleSubmit() {
-    console.log("[v0] === handleSubmit START ===")
-    
     if (!selectedFile) {
       setError("画像ファイルを選択してください")
       return
@@ -200,43 +158,47 @@ export default function AnalyzeShelfPage() {
     setResult(null)
 
     try {
-      const formData = new FormData()
-      formData.append("store_id", storeId)
-      formData.append("shelf_id", shelfId)
-      formData.append("timestamp", new Date().toISOString())
-      formData.append("image", selectedFile)
-      
-      console.log("[v0] Calling authFetch...")
-      
+      console.log("[v0] Step 1: Starting Blob upload...")
+      // Step 1: Upload image directly to Blob storage from client (bypasses Vercel payload limit)
+      const blob = await upload(`shelf-images/${Date.now()}-${selectedFile.name}`, selectedFile, {
+        access: "public",
+        handleUploadUrl: `/api/analyzeshelf/upload?token=${encodeURIComponent(token || "")}`,
+      })
+      console.log("[v0] Step 1: Blob upload complete, URL:", blob.url)
+
+      // Step 2: Call analyze API with blob URL (server fetches from Blob and sends to external API)
+      console.log("[v0] Step 2: Calling analyze API...")
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          blobUrl: blob.url,
+          storeId,
+          shelfId,
+          timestamp: new Date().toISOString(),
+        }),
       })
 
-      console.log("[v0] Response status:", response.status)
-      
       const responseText = await response.text()
-      console.log("[v0] Response text:", responseText.substring(0, 200))
       
       let data
       try {
         data = JSON.parse(responseText)
-      } catch (e) {
-        console.error("[v0] JSON parse failed:", e)
+      } catch {
         throw new Error(`レスポンスの解析に失敗: ${responseText.substring(0, 100)}`)
       }
 
       if (!response.ok) {
-        throw new Error(data.error || "分析に失敗しました")
+        throw new Error(data.error || data.detail || "分析に失敗しました")
       }
 
       setResult(data)
     } catch (err) {
-      console.error("[v0] Error:", err)
       const errorMessage = err instanceof Error ? err.message : "分析中にエラーが発生しました"
       setError(errorMessage)
     } finally {
-      console.log("[v0] === handleSubmit END ===")
       setIsLoading(false)
     }
   }
