@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "luc
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
 
-interface EmptySpace {
+interface FrontFaceGap {
   x_min: number
   y_min: number
   x_max: number
@@ -21,7 +21,7 @@ interface AnalysisItem {
   product_name: string | null
   status: "OOS" | "LOW_STOCK"
   confidence: number
-  empty_space: EmptySpace
+  front_face_gap: FrontFaceGap
   estimated_replenishment_qty: number
   priority: "High" | "Medium" | "Low"
   location: {
@@ -97,7 +97,7 @@ export default function AnalyzeShelfPage() {
       
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item) => {
-        const box = item.empty_space
+        const box = item.front_face_gap
         if (!box) return
         
         // Coordinates are in pixels
