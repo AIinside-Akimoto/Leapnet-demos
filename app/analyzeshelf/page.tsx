@@ -112,6 +112,12 @@ export default function AnalyzeShelfPage() {
         const y = box.y_min
         const width = box.x_max - box.x_min
         const height = box.y_max - box.y_min
+        
+        if (index === 0) {
+          console.log("[v0] Canvas size:", img.width, "x", img.height)
+          console.log("[v0] Display size:", displayWidth)
+          console.log("[v0] First box coords: x=", x, "y=", y, "w=", width, "h=", height)
+        }
 
         // Color based on status
         const isOOS = item.status === "OOS"
