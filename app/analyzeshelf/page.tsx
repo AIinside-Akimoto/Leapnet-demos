@@ -40,12 +40,6 @@ interface AnalysisResult {
     items: AnalysisItem[]
   }
 }
-      total_oos_items: number
-      total_replenish_items: number
-    }
-    items: AnalysisItem[]
-  }
-}
 
 export default function AnalyzeShelfPage() {
   const router = useRouter()
