@@ -83,9 +83,9 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error) {
-    console.error("Shelf analyzer API error:", error)
+    console.error("[v0] Shelf analyzer API error:", error)
     return NextResponse.json(
-      { error: "棚分析処理中にエラーが発生しました" },
+      { error: "棚分析処理中にエラーが発生しました", details: String(error) },
       { status: 500 }
     )
   }
