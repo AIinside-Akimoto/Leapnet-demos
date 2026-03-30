@@ -99,9 +99,6 @@ export default function AnalyzeShelfPage() {
       
       console.log("[v0] displayWidth:", displayWidth, "renderScale:", renderScale)
       console.log("[v0] first item box:", result.analysis_result.items[0]?.front_face_gap)
-      // Fixed font sizes in screen pixels, scaled for canvas rendering
-      const displayWidth = canvas.getBoundingClientRect().width || 800
-      const renderScale = img.width / displayWidth
       
       const screenFontSize = 16 // screen pixels
       const screenSmallFontSize = 13 // screen pixels
