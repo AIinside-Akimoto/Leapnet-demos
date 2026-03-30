@@ -41,6 +41,15 @@ interface AnalysisResult {
   }
 }
 
+// Helper function to get circled number (①②③...)
+function getCircledNumber(n: number): string {
+  const circledNumbers = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"]
+  if (n >= 1 && n <= 20) {
+    return circledNumbers[n - 1]
+  }
+  return `(${n})`
+}
+
 export default function AnalyzeShelfPage() {
   const router = useRouter()
   const { token, session, sessionLoading, authFetch } = useAuth()
@@ -93,7 +102,7 @@ export default function AnalyzeShelfPage() {
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
       // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item) => {
+      result.analysis_result.items.forEach((item, index) => {
         const box = item.front_face_gap
         if (!box) return
         
@@ -117,8 +126,8 @@ export default function AnalyzeShelfPage() {
         ctx.lineWidth = lineWidth
         ctx.strokeRect(x, y, width, height)
 
-        // Draw label with product name
-        const labelText = item.product_name || "空きスペース"
+        // Draw label with circled number
+        const labelText = getCircledNumber(index + 1)
         ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
         const labelHeight = fontSize + labelPadding * 2
@@ -428,6 +437,7 @@ export default function AnalyzeShelfPage() {
                           className="flex items-center justify-between rounded-lg border p-3"
                         >
                           <div className="flex items-center gap-3">
+                            <span className="font-bold text-lg min-w-[1.5rem]">{getCircledNumber(index + 1)}</span>
                             <div className={`h-3 w-3 rounded-full ${isOOS ? "bg-red-500" : "bg-yellow-500"}`} />
                             <div>
                               <p className="font-medium">
