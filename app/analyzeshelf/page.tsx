@@ -90,6 +90,8 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
+      console.log("[v0] img.width:", img.width, "img.height:", img.height)
+      console.log("[v0] first item box:", result.analysis_result.items[0]?.front_face_gap)
       // Fixed font sizes in screen pixels, scaled for canvas rendering
       const displayWidth = canvas.getBoundingClientRect().width || 800
       const renderScale = img.width / displayWidth
