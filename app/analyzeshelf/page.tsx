@@ -131,9 +131,10 @@ export default function AnalyzeShelfPage() {
         ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
         const labelHeight = fontSize + labelPadding * 2
-        const labelY = y - labelHeight - 4
+        // Draw label inside the box at top
+        const labelY = y + 2
 
-        // Draw label background at top of box
+        // Draw label background inside top of box
         ctx.fillStyle = strokeColor
         ctx.fillRect(x, labelY, textMetrics.width + labelPadding * 2, labelHeight)
 
