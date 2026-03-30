@@ -97,9 +97,6 @@ export default function AnalyzeShelfPage() {
       const displayWidth = canvas.getBoundingClientRect().width || 800
       const renderScale = img.width / displayWidth
       
-      console.log("[v0] displayWidth:", displayWidth, "renderScale:", renderScale)
-      console.log("[v0] first item box:", result.analysis_result.items[0]?.front_face_gap)
-      
       const screenFontSize = 16 // screen pixels
       const screenSmallFontSize = 13 // screen pixels
       const fontSize = Math.round(screenFontSize * renderScale)
@@ -319,7 +316,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            棚の画像をアップロードして、欠品や補充が必要な商品を自動検出します
+            ��の画像をアップロードして、欠品や補充が必要な商品を自動検出します
           </p>
         </div>
 
