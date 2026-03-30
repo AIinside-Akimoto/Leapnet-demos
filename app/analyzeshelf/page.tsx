@@ -91,6 +91,13 @@ export default function AnalyzeShelfPage() {
       ctx.drawImage(img, 0, 0)
 
       console.log("[v0] img.width:", img.width, "img.height:", img.height)
+      
+      // Calculate render scale: how much the canvas is scaled down for display
+      // We want text to appear as fixed screen pixels regardless of image size
+      const displayWidth = canvas.getBoundingClientRect().width || 800
+      const renderScale = img.width / displayWidth
+      
+      console.log("[v0] displayWidth:", displayWidth, "renderScale:", renderScale)
       console.log("[v0] first item box:", result.analysis_result.items[0]?.front_face_gap)
       // Fixed font sizes in screen pixels, scaled for canvas rendering
       const displayWidth = canvas.getBoundingClientRect().width || 800
