@@ -81,70 +81,64 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
-      // Use a requestAnimationFrame to ensure DOM layout is complete before calculating display size
-      requestAnimationFrame(() => {
-        // Calculate render scale: how much the canvas is scaled down for display
-        // We want text to appear as fixed screen pixels regardless of image size
-        const displayWidth = canvas.getBoundingClientRect().width || 800
-        const renderScale = img.width / displayWidth
-        // Target screen sizes: label=16px, confidence=13px
-        const fontSize = Math.round(16 * renderScale)
-        const smallFontSize = Math.round(13 * renderScale)
-        const labelPadding = Math.round(4 * renderScale)
-        const lineWidth = Math.max(1, Math.round(2 * renderScale))
+      // Fixed font sizes in screen pixels, scaled for canvas rendering
+      const displayWidth = canvas.getBoundingClientRect().width || 800
+      const renderScale = img.width / displayWidth
+      
+      const screenFontSize = 16 // screen pixels
+      const screenSmallFontSize = 13 // screen pixels
+      const fontSize = Math.round(screenFontSize * renderScale)
+      const smallFontSize = Math.round(screenSmallFontSize * renderScale)
+      const labelPadding = Math.round(4 * renderScale)
+      const lineWidth = Math.max(1, Math.round(2 * renderScale))
+      
+      // Draw empty space boxes for each item (coordinates are in pixels)
+      result.analysis_result.items.forEach((item) => {
+        const box = item.front_face_gap
+        if (!box) return
         
-        // Clear and redraw
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.drawImage(img, 0, 0)
+        // Coordinates are in pixels
+        const x = box.x_min
+        const y = box.y_min
+        const width = box.x_max - box.x_min
+        const height = box.y_max - box.y_min
+
+        // Color based on status
+        const isOOS = item.status === "OOS"
+        const strokeColor = isOOS ? "#ef4444" : "#f59e0b"
+        const fillColor = isOOS ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"
+
+        // Draw filled rectangle
+        ctx.fillStyle = fillColor
+        ctx.fillRect(x, y, width, height)
+
+        // Draw border
+        ctx.strokeStyle = strokeColor
+        ctx.lineWidth = lineWidth
+        ctx.strokeRect(x, y, width, height)
+
+        // Draw label with product name
+        const labelText = item.product_name || "空きスペース"
+        ctx.font = `bold ${fontSize}px sans-serif`
+        const textMetrics = ctx.measureText(labelText)
+        const labelHeight = fontSize + labelPadding * 2
+
+        // Draw label background at top of box
+        ctx.fillStyle = strokeColor
+        ctx.fillRect(x, y - labelHeight - 4, textMetrics.width + labelPadding * 2, labelHeight)
+
+        // Draw label text
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText(labelText, x + labelPadding, y - labelPadding - 4)
         
-        // Draw empty space boxes for each item (coordinates are in pixels)
-        result.analysis_result.items.forEach((item) => {
-          const box = item.front_face_gap
-          if (!box) return
-          
-          // Coordinates are in pixels
-          const x = box.x_min
-          const y = box.y_min
-          const width = box.x_max - box.x_min
-          const height = box.y_max - box.y_min
-
-          // Color based on status
-          const isOOS = item.status === "OOS"
-          const strokeColor = isOOS ? "#ef4444" : "#f59e0b"
-          const fillColor = isOOS ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"
-
-          // Draw filled rectangle
-          ctx.fillStyle = fillColor
-          ctx.fillRect(x, y, width, height)
-
-          // Draw border
-          ctx.strokeStyle = strokeColor
-          ctx.lineWidth = lineWidth
-          ctx.strokeRect(x, y, width, height)
-
-          // Draw label with product name
-          const labelText = item.product_name || "空きスペース"
-          ctx.font = `bold ${fontSize}px sans-serif`
-          const textMetrics = ctx.measureText(labelText)
-          const labelHeight = fontSize + labelPadding * 2
-
-          // Draw label background at top of box
-          ctx.fillStyle = strokeColor
-          ctx.fillRect(x, y - labelHeight - 4, textMetrics.width + labelPadding * 2, labelHeight)
-
-          // Draw label text
-          ctx.fillStyle = "#ffffff"
-          ctx.fillText(labelText, x + labelPadding, y - labelPadding - 4)
-          
-          // Draw confidence percentage
-          const confidenceText = `${Math.round(item.confidence * 100)}%`
-          ctx.font = `bold ${smallFontSize}px sans-serif`
-          const confMetrics = ctx.measureText(confidenceText)
-          ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-          ctx.fillRect(x + width - confMetrics.width - labelPadding * 2, y + labelPadding, confMetrics.width + labelPadding * 2, smallFontSize + labelPadding)
-          ctx.fillStyle = "#ffffff"
-          ctx.fillText(confidenceText, x + width - confMetrics.width - labelPadding, y + labelPadding + smallFontSize)
-        })
+        // Draw confidence percentage
+        const confidenceText = `${Math.round(item.confidence * 100)}%`
+        ctx.font = `bold ${smallFontSize}px sans-serif`
+        const confMetrics = ctx.measureText(confidenceText)
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
+        ctx.fillRect(x + width - confMetrics.width - labelPadding * 2, y + labelPadding, confMetrics.width + labelPadding * 2, smallFontSize + labelPadding)
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText(confidenceText, x + width - confMetrics.width - labelPadding, y + labelPadding + smallFontSize)
       })
     }
     img.src = previewUrl
