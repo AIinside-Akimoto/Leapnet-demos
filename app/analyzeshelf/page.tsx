@@ -114,9 +114,8 @@ export default function AnalyzeShelfPage() {
         const height = box.y_max - box.y_min
         
         if (index === 0) {
-          console.log("[v0] Canvas size:", img.width, "x", img.height)
-          console.log("[v0] Display size:", displayWidth)
-          console.log("[v0] First box coords: x=", x, "y=", y, "w=", width, "h=", height)
+          console.log("[v0] Canvas size:", img.width, "x", img.height, "Display width:", displayWidth, "renderScale:", renderScale)
+          console.log("[v0] First box: y=", y, "height=", height, "y_percent=", (y / img.height * 100).toFixed(1) + "%")
         }
 
         // Color based on status
