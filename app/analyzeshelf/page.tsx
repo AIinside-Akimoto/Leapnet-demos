@@ -92,8 +92,8 @@ export default function AnalyzeShelfPage() {
 
       // Calculate render scale: how much the canvas is scaled down for display
       // We want text to appear as fixed screen pixels regardless of image size
-      const displayWidth = canvas.getBoundingClientRect().width || 800
-      const renderScale = img.width / displayWidth
+      let displayWidth = canvas.getBoundingClientRect().width || 800
+      let renderScale = img.width / displayWidth
       
       const screenFontSize = 16 // screen pixels
       const screenSmallFontSize = 13 // screen pixels
