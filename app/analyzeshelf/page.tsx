@@ -129,15 +129,15 @@ export default function AnalyzeShelfPage() {
         ctx.lineWidth = lineWidth
         ctx.strokeRect(x, y, width, height)
 
-        // Draw label with circled number
+        // Draw label with circled number at bottom of box
         const labelText = getCircledNumber(index + 1)
         ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
         const labelHeight = fontSize + labelPadding * 2
-        // Draw label inside the box at top
-        const labelY = y + 2
+        // Draw label below the box
+        const labelY = y + height + 2
 
-        // Draw label background inside top of box
+        // Draw label background below the box
         ctx.fillStyle = strokeColor
         ctx.fillRect(x, labelY, textMetrics.width + labelPadding * 2, labelHeight)
 
