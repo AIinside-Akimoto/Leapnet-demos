@@ -107,11 +107,11 @@ export default function AnalyzeShelfPage() {
         const box = item.front_face_gap
         if (!box) return
         
-        // Coordinates are in pixels
-        const x = box.x_min
-        const y = box.y_min
-        const width = box.x_max - box.x_min
-        const height = box.y_max - box.y_min
+        // Coordinates are 0-1 ratios, convert to canvas pixels
+        const x = box.x_min * img.width
+        const y = box.y_min * img.height
+        const width = (box.x_max - box.x_min) * img.width
+        const height = (box.y_max - box.y_min) * img.height
 
         // Color based on status
         const isOOS = item.status === "OOS"
@@ -314,7 +314,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            ��の画像をアップロードして、欠品や補充が必要な商品を自動検出します
+            ��の画像をアップロードして、欠品や補充が必要な商品を自動検出しま��
           </p>
         </div>
 
