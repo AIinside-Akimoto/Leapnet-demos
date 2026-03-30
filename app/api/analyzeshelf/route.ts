@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
+// Increase timeout for external API calls (max 60s on Pro plan)
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   console.log("[v0] API route started")
   try {
