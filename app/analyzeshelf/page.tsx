@@ -41,6 +41,15 @@ interface AnalysisResult {
   }
 }
 
+// Helper function to get circled number (①②③...)
+function getCircledNumber(n: number): string {
+  const circledNumbers = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"]
+  if (n >= 1 && n <= 20) {
+    return circledNumbers[n - 1]
+  }
+  return `(${n})`
+}
+
 export default function AnalyzeShelfPage() {
   const router = useRouter()
   const { token, session, sessionLoading, authFetch } = useAuth()
@@ -81,9 +90,10 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
-      // Fixed font sizes in screen pixels, scaled for canvas rendering
-      const displayWidth = canvas.getBoundingClientRect().width || 800
-      const renderScale = img.width / displayWidth
+      // Calculate render scale: how much the canvas is scaled down for display
+      // We want text to appear as fixed screen pixels regardless of image size
+      let displayWidth = canvas.getBoundingClientRect().width || 800
+      let renderScale = img.width / displayWidth
       
       const screenFontSize = 16 // screen pixels
       const screenSmallFontSize = 13 // screen pixels
@@ -93,7 +103,7 @@ export default function AnalyzeShelfPage() {
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
       // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item) => {
+      result.analysis_result.items.forEach((item, index) => {
         const box = item.front_face_gap
         if (!box) return
         
@@ -117,19 +127,22 @@ export default function AnalyzeShelfPage() {
         ctx.lineWidth = lineWidth
         ctx.strokeRect(x, y, width, height)
 
-        // Draw label with product name
-        const labelText = item.product_name || "空きスペース"
+        // Draw label with circled number at bottom of box
+        const labelText = getCircledNumber(index + 1)
         ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
         const labelHeight = fontSize + labelPadding * 2
+        // Draw label below the box
+        const labelY = y + height + 2
 
-        // Draw label background at top of box
+        // Draw label background below the box
         ctx.fillStyle = strokeColor
-        ctx.fillRect(x, y - labelHeight - 4, textMetrics.width + labelPadding * 2, labelHeight)
+        ctx.fillRect(x, labelY, textMetrics.width + labelPadding * 2, labelHeight)
 
-        // Draw label text
+        // Draw label text (centered vertically in label background)
         ctx.fillStyle = "#ffffff"
-        ctx.fillText(labelText, x + labelPadding, y - labelPadding - 4)
+        ctx.textBaseline = "middle"
+        ctx.fillText(labelText, x + labelPadding, labelY + labelHeight / 2)
         
         // Draw confidence percentage
         const confidenceText = `${Math.round(item.confidence * 100)}%`
@@ -301,7 +314,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            棚の画像をアップロードして、欠品や補充が必要な商品を自動検出します
+            ��の画像をアップロードして、欠品や補充が必要な商品を自動検出します
           </p>
         </div>
 
@@ -426,6 +439,7 @@ export default function AnalyzeShelfPage() {
                           className="flex items-center justify-between rounded-lg border p-3"
                         >
                           <div className="flex items-center gap-3">
+                            <span className="font-bold text-lg min-w-[1.5rem]">{getCircledNumber(index + 1)}</span>
                             <div className={`h-3 w-3 rounded-full ${isOOS ? "bg-red-500" : "bg-yellow-500"}`} />
                             <div>
                               <p className="font-medium">
@@ -476,7 +490,7 @@ export default function AnalyzeShelfPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-auto rounded-lg border">
-                <canvas ref={canvasRef} className="max-h-[600px] max-w-full" style={{ display: 'block' }} />
+                <canvas ref={canvasRef} className="max-w-full" style={{ display: 'block' }} />
               </div>
             </CardContent>
           </Card>
