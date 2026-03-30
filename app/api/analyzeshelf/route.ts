@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
 export async function POST(request: NextRequest) {
+  console.log("[v0] API route started")
   try {
     // Verify auth token
     const authHeader = request.headers.get("Authorization")
@@ -39,12 +40,15 @@ export async function POST(request: NextRequest) {
     const storeId = formData.get("store_id") as string
     const shelfId = formData.get("shelf_id") as string
     const timestamp = formData.get("timestamp") as string
+    const imageWidth = formData.get("image_width") as string
+    const imageHeight = formData.get("image_height") as string
     
     if (!imageFile) {
       return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
-
-    console.log("[v0] Image file received:", imageFile.name, imageFile.size, "bytes")
+    
+    console.log("[v0] Image received:", imageFile.name, imageFile.size, "bytes")
+    console.log("[v0] Dimensions:", imageWidth, "x", imageHeight)
 
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
@@ -52,8 +56,11 @@ export async function POST(request: NextRequest) {
     externalFormData.append("store_id", storeId || "store-001")
     externalFormData.append("shelf_id", shelfId || "shelf-001")
     externalFormData.append("timestamp", timestamp || new Date().toISOString())
+    if (imageWidth) externalFormData.append("image_width", imageWidth)
+    if (imageHeight) externalFormData.append("image_height", imageHeight)
     
     // Forward the request to the external API
+    console.log("[v0] Calling external API:", apiUrl)
     const response = await fetch(`${apiUrl}/analyze_shelf`, {
       method: "POST",
       headers: {
@@ -63,6 +70,7 @@ export async function POST(request: NextRequest) {
     })
 
     const responseText = await response.text()
+    console.log("[v0] Response status:", response.status)
 
     if (!response.ok) {
       return NextResponse.json(
@@ -73,7 +81,6 @@ export async function POST(request: NextRequest) {
 
     try {
       const data = JSON.parse(responseText)
-      console.log("[v0] API response - items:", data.analysis_result?.items?.length, "first item:", data.analysis_result?.items?.[0]?.empty_space)
       return NextResponse.json(data)
     } catch {
       return NextResponse.json(
@@ -82,9 +89,9 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error) {
-    console.error("Shelf analyzer API error:", error)
+    console.error("[v0] Shelf analyzer API error:", error)
     return NextResponse.json(
-      { error: "棚分析処理中にエラーが発生しました" },
+      { error: "棚分析処理中にエラーが発生しました", details: String(error) },
       { status: 500 }
     )
   }

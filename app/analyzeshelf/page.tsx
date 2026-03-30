@@ -10,7 +10,7 @@ import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "luc
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
 
-interface EmptySpace {
+interface FrontFaceGap {
   x_min: number
   y_min: number
   x_max: number
@@ -19,14 +19,24 @@ interface EmptySpace {
 
 interface AnalysisItem {
   product_name: string | null
-  status: "OOS"
+  status: "OOS" | "LOW_STOCK"
   confidence: number
-  empty_space: EmptySpace
+  front_face_gap: FrontFaceGap
+  estimated_replenishment_qty: number
+  priority: "High" | "Medium" | "Low"
+  location: {
+    row: number
+    position: "Left" | "Center" | "Right"
+  }
 }
 
 interface AnalysisResult {
   analysis_result: {
     shelf_id: string
+    summary: {
+      total_oos_items: number
+      total_replenish_items: number
+    }
     items: AnalysisItem[]
   }
 }
@@ -36,11 +46,13 @@ export default function AnalyzeShelfPage() {
   const { token, session, sessionLoading, authFetch } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [storeId, setStoreId] = useState("STORE001")
   const [shelfId, setShelfId] = useState("SHELF001A")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -68,23 +80,19 @@ export default function AnalyzeShelfPage() {
       
       // Draw the image
       ctx.drawImage(img, 0, 0)
-      
-      // Calculate display scale (canvas actual size vs CSS display size)
-      const displayWidth = canvas.offsetWidth || canvas.width
-      const displayHeight = canvas.offsetHeight || canvas.height
-      const scaleX = displayWidth / canvas.width
-      const scaleY = displayHeight / canvas.height
-      
-      // Scale factor based on image size (for large images, make lines/text bigger)
-      const baseScale = Math.max(img.width, img.height) / 1000
-      const scale = Math.max(baseScale * scaleX, baseScale * scaleY)
-      const lineWidth = Math.max(3, Math.round(6 * scale))
-      const fontSize = Math.max(14, Math.round(24 * scale))
-      const labelPadding = Math.max(6, Math.round(10 * scale))
+
+      // Calculate the CSS display width of the canvas to match UI text size
+      const displayWidth = canvas.parentElement?.clientWidth || 800
+      const renderScale = img.width / displayWidth
+      // Target: 14px on screen → scale up to canvas pixel size
+      const fontSize = Math.round(14 * renderScale)
+      const smallFontSize = Math.round(12 * renderScale)
+      const labelPadding = Math.round(5 * renderScale)
+      const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
       // Draw empty space boxes for each item (coordinates are in pixels)
       result.analysis_result.items.forEach((item) => {
-        const box = item.empty_space
+        const box = item.front_face_gap
         if (!box) return
         
         // Coordinates are in pixels
@@ -93,9 +101,10 @@ export default function AnalyzeShelfPage() {
         const width = box.x_max - box.x_min
         const height = box.y_max - box.y_min
 
-        // Color for OOS items
-        const strokeColor = "#ef4444"
-        const fillColor = "rgba(239, 68, 68, 0.3)"
+        // Color based on status
+        const isOOS = item.status === "OOS"
+        const strokeColor = isOOS ? "#ef4444" : "#f59e0b"
+        const fillColor = isOOS ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"
 
         // Draw filled rectangle
         ctx.fillStyle = fillColor
@@ -122,7 +131,6 @@ export default function AnalyzeShelfPage() {
         
         // Draw confidence percentage
         const confidenceText = `${Math.round(item.confidence * 100)}%`
-        const smallFontSize = Math.max(12, Math.round(18 * scale))
         ctx.font = `bold ${smallFontSize}px sans-serif`
         const confMetrics = ctx.measureText(confidenceText)
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
@@ -170,11 +178,23 @@ export default function AnalyzeShelfPage() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
+      // Cancel any in-progress API call
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
       setIsLoading(true)
       try {
         const compressedFile = await compressImage(file)
+        // Get the actual pixel dimensions of the compressed image
+        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+          const img = new Image()
+          img.onload = () => resolve({ width: img.width, height: img.height })
+          img.src = URL.createObjectURL(compressedFile)
+        })
         setSelectedFile(compressedFile)
         setPreviewUrl(URL.createObjectURL(compressedFile))
+        setImageDimensions(dimensions)
         setResult(null)
         setError(null)
       } finally {
@@ -189,6 +209,13 @@ export default function AnalyzeShelfPage() {
       return
     }
 
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setIsLoading(true)
     setError(null)
     setResult(null)
@@ -199,10 +226,15 @@ export default function AnalyzeShelfPage() {
       formData.append("shelf_id", shelfId)
       formData.append("timestamp", new Date().toISOString())
       formData.append("image", selectedFile)
+      if (imageDimensions) {
+        formData.append("image_width", String(imageDimensions.width))
+        formData.append("image_height", String(imageDimensions.height))
+      }
       
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
         body: formData,
+        signal: abortController.signal,
       })
 
       const responseText = await response.text()
@@ -220,6 +252,10 @@ export default function AnalyzeShelfPage() {
 
       setResult(data)
     } catch (err) {
+      // Ignore abort errors (user changed image during analysis)
+      if (err instanceof Error && err.name === "AbortError") {
+        return
+      }
       const errorMessage = err instanceof Error ? err.message : "分析中にエラーが発生しました"
       setError(errorMessage)
     } finally {
@@ -362,43 +398,59 @@ export default function AnalyzeShelfPage() {
               {result ? (
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="rounded-lg bg-red-500/10 p-4 text-center">
-                    <p className="text-2xl font-bold text-red-600">
-                      {result.analysis_result.items.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">空きスペース検出</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-red-500/10 p-3 text-center">
+                      <p className="text-2xl font-bold text-red-600">
+                        {result.analysis_result.summary?.total_oos_items ?? result.analysis_result.items.filter(i => i.status === "OOS").length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">欠品（OOS）</p>
+                    </div>
+                    <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {result.analysis_result.summary?.total_replenish_items ?? result.analysis_result.items.filter(i => i.status === "LOW_STOCK").length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">補充推奨（LOW_STOCK）</p>
+                    </div>
                   </div>
 
                   {/* Items List */}
                   <div className="space-y-2">
-                    {result.analysis_result.items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-3 w-3 rounded-full bg-red-500" />
-                          <div>
-                            <p className="font-medium">
-                              {item.product_name || "商品名不明"}
-                            </p>
-                            {item.empty_space && (
-                              <p className="text-xs text-muted-foreground">
-                                位置: ({item.empty_space.x_min}, {item.empty_space.y_min})
+                    {result.analysis_result.items.map((item, index) => {
+                      const isOOS = item.status === "OOS"
+                      const priorityColor = item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-lg border p-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`h-3 w-3 rounded-full ${isOOS ? "bg-red-500" : "bg-yellow-500"}`} />
+                            <div>
+                              <p className="font-medium">
+                                {item.product_name || "商品名不明"}
                               </p>
-                            )}
+                              <p className="text-xs text-muted-foreground">
+                                {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
+                                {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="destructive">欠品</Badge>
-                          <div className="text-right">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={isOOS ? "destructive" : "secondary"}>
+                              {isOOS ? "欠品" : "補充推奨"}
+                            </Badge>
+                            {item.priority && (
+                              <Badge variant={priorityColor as "destructive" | "secondary" | "outline"}>
+                                {item.priority}
+                              </Badge>
+                            )}
                             <p className="text-xs text-muted-foreground">
-                              信頼度: {Math.round((item.confidence || 0) * 100)}%
+                              {Math.round((item.confidence || 0) * 100)}%
                             </p>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               ) : (
@@ -422,7 +474,7 @@ export default function AnalyzeShelfPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-auto rounded-lg border">
-                <canvas ref={canvasRef} className="max-h-[600px] w-full" style={{ display: 'block' }} />
+                <canvas ref={canvasRef} className="max-h-[600px] max-w-full" style={{ display: 'block' }} />
               </div>
             </CardContent>
           </Card>
