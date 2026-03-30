@@ -46,6 +46,7 @@ export default function AnalyzeShelfPage() {
   const { token, session, sessionLoading, authFetch } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [storeId, setStoreId] = useState("STORE001")
   const [shelfId, setShelfId] = useState("SHELF001A")
@@ -177,6 +178,11 @@ export default function AnalyzeShelfPage() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
+      // Cancel any in-progress API call
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
       setIsLoading(true)
       try {
         const compressedFile = await compressImage(file)
@@ -203,6 +209,13 @@ export default function AnalyzeShelfPage() {
       return
     }
 
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setIsLoading(true)
     setError(null)
     setResult(null)
@@ -221,6 +234,7 @@ export default function AnalyzeShelfPage() {
       const response = await authFetch("/api/analyzeshelf", {
         method: "POST",
         body: formData,
+        signal: abortController.signal,
       })
 
       const responseText = await response.text()
@@ -238,6 +252,10 @@ export default function AnalyzeShelfPage() {
 
       setResult(data)
     } catch (err) {
+      // Ignore abort errors (user changed image during analysis)
+      if (err instanceof Error && err.name === "AbortError") {
+        return
+      }
       const errorMessage = err instanceof Error ? err.message : "分析中にエラーが発生しました"
       setError(errorMessage)
     } finally {
