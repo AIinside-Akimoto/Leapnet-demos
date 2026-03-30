@@ -490,7 +490,7 @@ export default function AnalyzeShelfPage() {
             </CardHeader>
             <CardContent>
               <div className="overflow-auto rounded-lg border">
-                <canvas ref={canvasRef} className="max-h-[600px] max-w-full" style={{ display: 'block' }} />
+                <canvas ref={canvasRef} className="max-w-full" style={{ display: 'block' }} />
               </div>
             </CardContent>
           </Card>
