@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
 export async function POST(request: NextRequest) {
+  console.log("[v0] API route started")
   try {
     // Verify auth token
     const authHeader = request.headers.get("Authorization")
@@ -45,6 +46,9 @@ export async function POST(request: NextRequest) {
     if (!imageFile) {
       return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
+    
+    console.log("[v0] Image received:", imageFile.name, imageFile.size, "bytes")
+    console.log("[v0] Dimensions:", imageWidth, "x", imageHeight)
 
     // Create new FormData for external API with all required fields
     const externalFormData = new FormData()
@@ -56,6 +60,7 @@ export async function POST(request: NextRequest) {
     if (imageHeight) externalFormData.append("image_height", imageHeight)
     
     // Forward the request to the external API
+    console.log("[v0] Calling external API:", apiUrl)
     const response = await fetch(`${apiUrl}/analyze_shelf`, {
       method: "POST",
       headers: {
@@ -65,6 +70,7 @@ export async function POST(request: NextRequest) {
     })
 
     const responseText = await response.text()
+    console.log("[v0] Response status:", response.status)
 
     if (!response.ok) {
       return NextResponse.json(
