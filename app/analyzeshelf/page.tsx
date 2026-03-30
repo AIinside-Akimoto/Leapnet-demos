@@ -122,14 +122,16 @@ export default function AnalyzeShelfPage() {
         ctx.font = `bold ${fontSize}px sans-serif`
         const textMetrics = ctx.measureText(labelText)
         const labelHeight = fontSize + labelPadding * 2
+        const labelY = y - labelHeight - 4
 
         // Draw label background at top of box
         ctx.fillStyle = strokeColor
-        ctx.fillRect(x, y - labelHeight - 4, textMetrics.width + labelPadding * 2, labelHeight)
+        ctx.fillRect(x, labelY, textMetrics.width + labelPadding * 2, labelHeight)
 
-        // Draw label text
+        // Draw label text (centered vertically in label background)
         ctx.fillStyle = "#ffffff"
-        ctx.fillText(labelText, x + labelPadding, y - labelPadding - 4)
+        ctx.textBaseline = "middle"
+        ctx.fillText(labelText, x + labelPadding, labelY + labelHeight / 2)
         
         // Draw confidence percentage
         const confidenceText = `${Math.round(item.confidence * 100)}%`
