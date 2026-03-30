@@ -81,13 +81,14 @@ export default function AnalyzeShelfPage() {
       // Draw the image
       ctx.drawImage(img, 0, 0)
 
-      // Calculate render scale: how much the canvas is scaled down for display
-      // We want text to appear as fixed screen pixels regardless of image size
+      // Fixed font sizes in screen pixels, scaled for canvas rendering
       const displayWidth = canvas.getBoundingClientRect().width || 800
       const renderScale = img.width / displayWidth
-      // Target screen sizes: label=16px, confidence=13px
-      const fontSize = Math.round(16 * renderScale)
-      const smallFontSize = Math.round(13 * renderScale)
+      
+      const screenFontSize = 16 // screen pixels
+      const screenSmallFontSize = 13 // screen pixels
+      const fontSize = Math.round(screenFontSize * renderScale)
+      const smallFontSize = Math.round(screenSmallFontSize * renderScale)
       const labelPadding = Math.round(4 * renderScale)
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
