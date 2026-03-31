@@ -314,7 +314,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            棚の画像をアップロードして、欠品や補充が必要な商品を自動検出します
+            棚の画像をアップロードして、欠品や補充が必要��商品を自動検出します
           </p>
         </div>
 
@@ -449,6 +449,11 @@ export default function AnalyzeShelfPage() {
                                 {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
                                 {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
                               </p>
+                              {item.front_face_gap && (
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  ({item.front_face_gap.x_min.toFixed(2)}, {item.front_face_gap.y_min.toFixed(2)}) - ({item.front_face_gap.x_max.toFixed(2)}, {item.front_face_gap.y_max.toFixed(2)})
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
