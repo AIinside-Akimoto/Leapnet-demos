@@ -246,7 +246,7 @@ export default function AnalyzeShelfPage() {
         formData.append("image_height", String(imageDimensions.height))
       }
       
-      const response = await authFetch("/api/analyzeshelf", {
+      const response = await authFetch("/api/analyze_shelf", {
         method: "POST",
         body: formData,
         signal: abortController.signal,
