@@ -314,7 +314,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            ��の画像をアップロードして、欠品や補充が必要な商品を自動検出しま��
+            棚の画像をアップロードして、欠品や補充が必要な商品を自動検出します
           </p>
         </div>
 
