@@ -449,11 +449,6 @@ export default function AnalyzeShelfPage() {
                                 {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
                                 {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
                               </p>
-                              {item.front_face_gap && (
-                                <p className="text-xs text-muted-foreground font-mono">
-                                  ({item.front_face_gap.x_min.toFixed(2)}, {item.front_face_gap.y_min.toFixed(2)}) - ({item.front_face_gap.x_max.toFixed(2)}, {item.front_face_gap.y_max.toFixed(2)})
-                                </p>
-                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -468,6 +463,11 @@ export default function AnalyzeShelfPage() {
                             <p className="text-xs text-muted-foreground">
                               {Math.round((item.confidence || 0) * 100)}%
                             </p>
+                            {item.front_face_gap && (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                ({item.front_face_gap.x_min.toFixed(2)},{item.front_face_gap.y_min.toFixed(2)})-({item.front_face_gap.x_max.toFixed(2)},{item.front_face_gap.y_max.toFixed(2)})
+                              </p>
+                            )}
                           </div>
                         </div>
                       )
