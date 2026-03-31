@@ -107,11 +107,11 @@ export default function AnalyzeShelfPage() {
         const box = item.front_face_gap
         if (!box) return
         
-        // Coordinates are in pixels
-        const x = box.x_min
-        const y = box.y_min
-        const width = box.x_max - box.x_min
-        const height = box.y_max - box.y_min
+        // Coordinates are 0-1 ratios, convert to canvas pixels
+        const x = box.x_min * img.width
+        const y = box.y_min * img.height
+        const width = (box.x_max - box.x_min) * img.width
+        const height = (box.y_max - box.y_min) * img.height
 
         // Color based on status
         const isOOS = item.status === "OOS"
@@ -246,7 +246,7 @@ export default function AnalyzeShelfPage() {
         formData.append("image_height", String(imageDimensions.height))
       }
       
-      const response = await authFetch("/api/analyzeshelf", {
+      const response = await authFetch("/api/analyze_shelf", {
         method: "POST",
         body: formData,
         signal: abortController.signal,
@@ -314,7 +314,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            ��の画像をアップロードして、欠品や補充が必要な商品を自動検出します
+            棚の画像をアップロードして、欠品や補充が必要��商品を自動検出します
           </p>
         </div>
 
@@ -448,6 +448,7 @@ export default function AnalyzeShelfPage() {
                               <p className="text-xs text-muted-foreground">
                                 {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
                                 {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
+                                {item.front_face_gap ? ` · (${item.front_face_gap.x_min.toFixed(2)},${item.front_face_gap.y_min.toFixed(2)})-(${item.front_face_gap.x_max.toFixed(2)},${item.front_face_gap.y_max.toFixed(2)})` : ""}
                               </p>
                             </div>
                           </div>
