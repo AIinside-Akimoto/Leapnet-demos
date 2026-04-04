@@ -444,14 +444,14 @@ export default function AnalyzeShelfPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant="destructive">欠品</Badge>
+                            <p className="text-xs text-muted-foreground">
+                              {Math.round((item.confidence || 0) * 100)}%
+                            </p>
                             {item.priority && (
                               <Badge variant={item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"}>
                                 {item.priority}
                               </Badge>
                             )}
-                            <p className="text-xs text-muted-foreground">
-                              {Math.round((item.confidence || 0) * 100)}%
-                            </p>
                           </div>
                         </div>
                       )
