@@ -19,7 +19,7 @@ interface FrontFaceGap {
 
 interface AnalysisItem {
   product_name: string | null
-  status: "OOS" | "LOW_STOCK"
+  status: "OOS"
   confidence: number
   front_face_gap: FrontFaceGap
   estimated_replenishment_qty: number
@@ -314,7 +314,7 @@ export default function AnalyzeShelfPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground">棚画像分析</h2>
           <p className="mt-2 text-muted-foreground">
-            棚の画像をアップロードして、欠品や補充が必要な商品を自動検出します
+            棚の画像をアップロードして、欠品や補充が必要��商品を自動検出します
           </p>
         </div>
 
@@ -413,26 +413,16 @@ export default function AnalyzeShelfPage() {
               {result ? (
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-red-500/10 p-3 text-center">
-                      <p className="text-2xl font-bold text-red-600">
-                        {result.analysis_result.summary?.total_oos_items ?? result.analysis_result.items.filter(i => i.status === "OOS").length}
-                      </p>
-                      <p className="text-xs text-muted-foreground">欠品（OOS）</p>
-                    </div>
-                    <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
-                      <p className="text-2xl font-bold text-yellow-600">
-                        {result.analysis_result.summary?.total_replenish_items ?? result.analysis_result.items.filter(i => i.status === "LOW_STOCK").length}
-                      </p>
-                      <p className="text-xs text-muted-foreground">補充推奨（LOW_STOCK）</p>
-                    </div>
+                  <div className="rounded-lg bg-red-500/10 p-3 text-center">
+                    <p className="text-2xl font-bold text-red-600">
+                      {result.analysis_result.summary?.total_oos_items ?? result.analysis_result.items.length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">欠品（OOS）</p>
                   </div>
 
                   {/* Items List */}
                   <div className="space-y-2">
                     {result.analysis_result.items.map((item, index) => {
-                      const isOOS = item.status === "OOS"
-                      const priorityColor = item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"
                       return (
                         <div
                           key={index}
@@ -440,7 +430,7 @@ export default function AnalyzeShelfPage() {
                         >
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-lg min-w-[1.5rem]">{getCircledNumber(index + 1)}</span>
-                            <div className={`h-3 w-3 rounded-full ${isOOS ? "bg-red-500" : "bg-yellow-500"}`} />
+                            <div className="h-3 w-3 rounded-full bg-red-500" />
                             <div>
                               <p className="font-medium">
                                 {item.product_name || "商品名不明"}
@@ -453,11 +443,9 @@ export default function AnalyzeShelfPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant={isOOS ? "destructive" : "secondary"}>
-                              {isOOS ? "欠品" : "補充推奨"}
-                            </Badge>
+                            <Badge variant="destructive">欠品</Badge>
                             {item.priority && (
-                              <Badge variant={priorityColor as "destructive" | "secondary" | "outline"}>
+                              <Badge variant={item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"}>
                                 {item.priority}
                               </Badge>
                             )}
