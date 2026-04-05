@@ -87,6 +87,14 @@ const DEMO_APPS: DemoApp[] = [
     href: "/analyzeshelf",
     color: "bg-sky-500/10 text-sky-600",
   },
+  {
+    id: "shelf-watcher-2",
+    title: "棚ウォッチャー2",
+    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
+    icon: <ScanSearch className="h-6 w-6" />,
+    href: "/analyzeshelf2",
+    color: "bg-teal-500/10 text-teal-600",
+  },
 ]
 
 export default function DashboardPage() {
