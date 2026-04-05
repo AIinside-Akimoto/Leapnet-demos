@@ -10,35 +10,20 @@ import { Loader2, ArrowLeft, Upload, ImageIcon, AlertCircle, Package } from "luc
 import { useAuth } from "@/lib/auth-context"
 import { Badge } from "@/components/ui/badge"
 
-interface FrontFaceGap {
-  x_min: number
-  y_min: number
-  x_max: number
-  y_max: number
+interface Coordinates {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
 }
 
-interface AnalysisItem {
-  product_name: string | null
-  status: "OOS"
-  confidence: number
-  front_face_gap: FrontFaceGap
-  estimated_replenishment_qty: number
-  priority: "High" | "Medium" | "Low"
-  location: {
-    row: number
-    position: "Left" | "Center" | "Right"
-  }
+interface OutOfStockItem {
+  product_name: string
+  coordinates: Coordinates
 }
 
 interface AnalysisResult {
-  analysis_result: {
-    shelf_id: string
-    summary: {
-      total_oos_items: number
-      total_replenish_items: number
-    }
-    items: AnalysisItem[]
-  }
+  out_of_stock_items: OutOfStockItem[]
 }
 
 // Helper function to get circled number (①②③...)
@@ -96,27 +81,24 @@ export default function AnalyzeShelfPage() {
       let renderScale = img.width / displayWidth
       
       const screenFontSize = 16 // screen pixels
-      const screenSmallFontSize = 13 // screen pixels
       const fontSize = Math.round(screenFontSize * renderScale)
-      const smallFontSize = Math.round(screenSmallFontSize * renderScale)
       const labelPadding = Math.round(4 * renderScale)
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
       // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item, index) => {
-        const box = item.front_face_gap
-        if (!box) return
+      result.out_of_stock_items.forEach((item, index) => {
+        const coords = item.coordinates
+        if (!coords) return
         
-        // Coordinates are 0-1 ratios, convert to canvas pixels
-        const x = box.x_min * img.width
-        const y = box.y_min * img.height
-        const width = (box.x_max - box.x_min) * img.width
-        const height = (box.y_max - box.y_min) * img.height
+        // Coordinates are in pixels
+        const x = coords.x1
+        const y = coords.y1
+        const width = coords.x2 - coords.x1
+        const height = coords.y2 - coords.y1
 
-        // Color based on status
-        const isOOS = item.status === "OOS"
-        const strokeColor = isOOS ? "#ef4444" : "#f59e0b"
-        const fillColor = isOOS ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"
+        // OOS items are always red
+        const strokeColor = "#ef4444"
+        const fillColor = "rgba(239, 68, 68, 0.3)"
 
         // Draw filled rectangle
         ctx.fillStyle = fillColor
@@ -143,15 +125,6 @@ export default function AnalyzeShelfPage() {
         ctx.fillStyle = "#ffffff"
         ctx.textBaseline = "middle"
         ctx.fillText(labelText, x + labelPadding, labelY + labelHeight / 2)
-        
-        // Draw confidence percentage
-        const confidenceText = `${Math.round(item.confidence * 100)}%`
-        ctx.font = `bold ${smallFontSize}px sans-serif`
-        const confMetrics = ctx.measureText(confidenceText)
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
-        ctx.fillRect(x + width - confMetrics.width - labelPadding * 2, y + labelPadding, confMetrics.width + labelPadding * 2, smallFontSize + labelPadding)
-        ctx.fillStyle = "#ffffff"
-        ctx.fillText(confidenceText, x + width - confMetrics.width - labelPadding, y + labelPadding + smallFontSize)
       })
     }
     img.src = previewUrl
@@ -246,7 +219,7 @@ export default function AnalyzeShelfPage() {
         formData.append("image_height", String(imageDimensions.height))
       }
       
-      const response = await authFetch("/api/analyze_shelf", {
+      const response = await authFetch("/api/analyze_shelf2", {
         method: "POST",
         body: formData,
         signal: abortController.signal,
@@ -304,7 +277,7 @@ export default function AnalyzeShelfPage() {
               ダッシュボードに戻る
             </Button>
           </div>
-          <h1 className="text-lg font-semibold text-foreground">棚ウォッチャー</h1>
+          <h1 className="text-lg font-semibold text-foreground">棚ウォッチャー2</h1>
           <div className="w-[180px]" />
         </div>
       </header>
@@ -415,14 +388,14 @@ export default function AnalyzeShelfPage() {
                   {/* Summary */}
                   <div className="rounded-lg bg-red-500/10 p-3 text-center">
                     <p className="text-2xl font-bold text-red-600">
-                      {result.analysis_result.summary?.total_oos_items ?? result.analysis_result.items.length}
+                      {result.out_of_stock_items.length}
                     </p>
                     <p className="text-xs text-muted-foreground">欠品（OOS）</p>
                   </div>
 
                   {/* Items List */}
                   <div className="space-y-2">
-                    {result.analysis_result.items.map((item, index) => {
+                    {result.out_of_stock_items.map((item, index) => {
                       return (
                         <div
                           key={index}
@@ -433,25 +406,15 @@ export default function AnalyzeShelfPage() {
                             <div className="h-3 w-3 rounded-full bg-red-500" />
                             <div>
                               <p className="font-medium">
-                                {item.product_name || "商品名不明"}
+                                {item.product_name || "不明"}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {item.location ? `${item.location.row}段目 ${item.location.position}` : ""}
-                                {item.estimated_replenishment_qty ? ` · 補充推奨: ${item.estimated_replenishment_qty}個` : ""}
-                                {item.front_face_gap ? ` · (${item.front_face_gap.x_min.toFixed(2)},${item.front_face_gap.y_min.toFixed(2)})-(${item.front_face_gap.x_max.toFixed(2)},${item.front_face_gap.y_max.toFixed(2)})` : ""}
+                                {item.coordinates ? `(${item.coordinates.x1},${item.coordinates.y1})-(${item.coordinates.x2},${item.coordinates.y2})` : ""}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant="destructive">欠品</Badge>
-                            {item.priority && (
-                              <Badge variant={item.priority === "High" ? "destructive" : item.priority === "Medium" ? "secondary" : "outline"}>
-                                {item.priority}
-                              </Badge>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              {Math.round((item.confidence || 0) * 100)}%
-                            </p>
                           </div>
                         </div>
                       )
