@@ -16,7 +16,8 @@ import {
   Pencil,
   Trash2,
   X,
-  ScanSearch
+  ScanSearch,
+  FileText
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -94,6 +95,14 @@ const DEMO_APPS: DemoApp[] = [
     icon: <ScanSearch className="h-6 w-6" />,
     href: "/analyzeshelf2",
     color: "bg-teal-500/10 text-teal-600",
+  },
+  {
+    id: "pdf-extractor",
+    title: "PDFテキスト抽出",
+    description: "PDFファイルからテキストを抽出し、Markdown形式で出力します",
+    icon: <FileText className="h-6 w-6" />,
+    href: "/pdfcontentsextractor",
+    color: "bg-orange-500/10 text-orange-600",
   },
 ]
 
@@ -454,7 +463,7 @@ export default function DashboardPage() {
                 id="comment"
                 value={formData.comment}
                 onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                placeholder="エージェントの説明"
+                placeholder="エー��ェントの説明"
                 rows={3}
               />
             </div>
