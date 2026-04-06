@@ -122,12 +122,20 @@ export default function PdfContentsExtractorPage() {
         signal,
       })
 
+      console.log("[v0] Response status:", response.status)
+      const responseText = await response.text()
+      console.log("[v0] Response text:", responseText.substring(0, 500))
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `APIエラー: ${response.status}`)
+        throw new Error(`APIエラー: ${response.status} - ${responseText}`)
       }
 
-      const data: ExtractionResult = await response.json()
+      let data: ExtractionResult
+      try {
+        data = JSON.parse(responseText)
+      } catch {
+        throw new Error(`JSONパースエラー: ${responseText.substring(0, 200)}`)
+      }
       
       // Adjust page numbers to reflect original PDF pages
       const adjustedPages = data.extracted_pages.map((page) => ({
