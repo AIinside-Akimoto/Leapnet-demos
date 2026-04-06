@@ -53,6 +53,7 @@ interface DemoApp {
   icon: React.ReactNode
   href: string
   color: string
+  allowedUsers?: string[]
 }
 
 const DEMO_APPS: DemoApp[] = [
@@ -103,6 +104,7 @@ const DEMO_APPS: DemoApp[] = [
     icon: <FileText className="h-6 w-6" />,
     href: "/pdfcontentsextractor",
     color: "bg-orange-500/10 text-orange-600",
+    allowedUsers: ["na21@inside.ai"],
   },
 ]
 
@@ -298,7 +300,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-          {DEMO_APPS.map((app) => (
+          {DEMO_APPS.filter((app) => 
+            !app.allowedUsers || app.allowedUsers.includes(session.username || "")
+          ).map((app) => (
             <Card
               key={app.id}
               className="group cursor-pointer transition-all hover:border-primary hover:shadow-md"
