@@ -300,9 +300,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-          {DEMO_APPS.filter((app) => 
-            !app.allowedUsers || app.allowedUsers.includes(session.username || "")
-          ).map((app) => (
+          {DEMO_APPS.filter((app) => {
+            const username = session.username || ""
+            // na21@inside.ai には allowedUsers に含まれているアプリだけ表示
+            if (username === "na21@inside.ai") {
+              return app.allowedUsers?.includes(username)
+            }
+            // 他のユーザーには allowedUsers が設定されていないアプリだけ表示
+            return !app.allowedUsers
+          }).map((app) => (
             <Card
               key={app.id}
               className="group cursor-pointer transition-all hover:border-primary hover:shadow-md"
