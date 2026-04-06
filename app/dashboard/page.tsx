@@ -16,7 +16,8 @@ import {
   Pencil,
   Trash2,
   X,
-  ScanSearch
+  ScanSearch,
+  FileText
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,6 +53,7 @@ interface DemoApp {
   icon: React.ReactNode
   href: string
   color: string
+  allowedUsers?: string[]
 }
 
 const DEMO_APPS: DemoApp[] = [
@@ -94,6 +96,15 @@ const DEMO_APPS: DemoApp[] = [
     icon: <ScanSearch className="h-6 w-6" />,
     href: "/analyzeshelf2",
     color: "bg-teal-500/10 text-teal-600",
+  },
+  {
+    id: "pdf-extractor",
+    title: "PDFテキスト抽出",
+    description: "PDFファイルからテキストを抽出し、Markdown形式で出力します",
+    icon: <FileText className="h-6 w-6" />,
+    href: "/pdfcontentsextractor",
+    color: "bg-orange-500/10 text-orange-600",
+    allowedUsers: ["na21@inside.ai"],
   },
 ]
 
@@ -289,7 +300,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-          {DEMO_APPS.map((app) => (
+          {DEMO_APPS.filter((app) => {
+            const username = session.username || ""
+            // na21@inside.ai には allowedUsers に含まれているアプリだけ表示
+            if (username === "na21@inside.ai") {
+              return app.allowedUsers?.includes(username)
+            }
+            // 他のユーザーには全てのアプリを表示
+            return true
+          }).map((app) => (
             <Card
               key={app.id}
               className="group cursor-pointer transition-all hover:border-primary hover:shadow-md"
@@ -325,21 +344,23 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Agent Library Section */}
-        <div className="mt-16 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">AIエージェントライブラリ</h2>
-              <p className="mt-2 text-muted-foreground">
-                ユーザーが登録したAIエージェントの一覧
-              </p>
+        {/* Agent Library Section - hidden for na21@inside.ai */}
+        {session.username !== "na21@inside.ai" && (
+          <>
+            <div className="mt-16 mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">AIエージェントライブラリ</h2>
+                  <p className="mt-2 text-muted-foreground">
+                    ユーザーが登録したAIエージェントの一覧
+                  </p>
+                </div>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  エージェントを登録
+                </Button>
+              </div>
             </div>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              エージェントを登録
-            </Button>
-          </div>
-        </div>
 
         {agentsLoading ? (
           <div className="flex justify-center py-12">
@@ -418,6 +439,8 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+          </>
+        )}
       </main>
 
       {/* Create/Edit Dialog */}
@@ -454,7 +477,7 @@ export default function DashboardPage() {
                 id="comment"
                 value={formData.comment}
                 onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                placeholder="エージェントの説明"
+                placeholder="エー��ェントの説明"
                 rows={3}
               />
             </div>
