@@ -34,8 +34,8 @@ export default function PdfContentsExtractorPage() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [pagesPerChunk, setPagesPerChunk] = useState(10)
-  const [concurrency, setConcurrency] = useState(3)
+  const [pagesPerChunk, setPagesPerChunk] = useState(5)
+  const [concurrency, setConcurrency] = useState(2)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [totalPages, setTotalPages] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
