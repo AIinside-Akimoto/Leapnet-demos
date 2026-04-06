@@ -35,7 +35,7 @@ export default function PdfContentsExtractorPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [pagesPerChunk, setPagesPerChunk] = useState(2)
-  const [concurrency, setConcurrency] = useState(2)
+  const [concurrency, setConcurrency] = useState(1)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [totalPages, setTotalPages] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -322,12 +322,12 @@ export default function PdfContentsExtractorPage() {
                     id="concurrency"
                     type="number"
                     min={1}
-                    max={10}
+                    max={2}
                     value={concurrency}
-                    onChange={(e) => setConcurrency(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => setConcurrency(Math.max(1, Math.min(2, parseInt(e.target.value) || 1)))}
                   />
                   <p className="text-xs text-muted-foreground">
-                    同時に処理するチャンク数（1-10）
+                    同時に処理するチャンク数（1-2）
                   </p>
                 </div>
               </div>
