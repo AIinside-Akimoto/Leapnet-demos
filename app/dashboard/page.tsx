@@ -344,21 +344,23 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Agent Library Section */}
-        <div className="mt-16 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">AIエージェントライブラリ</h2>
-              <p className="mt-2 text-muted-foreground">
-                ユーザーが登録したAIエージェントの一覧
-              </p>
+        {/* Agent Library Section - hidden for na21@inside.ai */}
+        {session.username !== "na21@inside.ai" && (
+          <>
+            <div className="mt-16 mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">AIエージェントライブラリ</h2>
+                  <p className="mt-2 text-muted-foreground">
+                    ユーザーが登録したAIエージェントの一覧
+                  </p>
+                </div>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  エージェントを登録
+                </Button>
+              </div>
             </div>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              エージェントを登録
-            </Button>
-          </div>
-        </div>
 
         {agentsLoading ? (
           <div className="flex justify-center py-12">
@@ -436,6 +438,8 @@ export default function DashboardPage() {
               </Card>
             ))}
           </div>
+        )}
+          </>
         )}
       </main>
 
