@@ -82,6 +82,14 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-amber-500/10 text-amber-600",
   },
   {
+    id: "shelf-watcher-0",
+    title: "棚ウォッチャー0",
+    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
+    icon: <ScanSearch className="h-6 w-6" />,
+    href: "/analyzeshelf0",
+    color: "bg-indigo-500/10 text-indigo-600",
+  },
+  {
     id: "shelf-watcher",
     title: "棚ウォッチャー",
     description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
