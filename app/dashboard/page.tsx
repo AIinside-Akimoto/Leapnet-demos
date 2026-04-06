@@ -306,8 +306,8 @@ export default function DashboardPage() {
             if (username === "na21@inside.ai") {
               return app.allowedUsers?.includes(username)
             }
-            // 他のユーザーには allowedUsers が設定されていないアプリだけ表示
-            return !app.allowedUsers
+            // 他のユーザーには全てのアプリを表示
+            return true
           }).map((app) => (
             <Card
               key={app.id}
