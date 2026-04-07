@@ -88,6 +88,16 @@ const DEMO_APPS: DemoApp[] = [
     icon: <ScanSearch className="h-6 w-6" />,
     href: "/analyzeshelf0",
     color: "bg-indigo-500/10 text-indigo-600",
+    allowedUsers: ["DIS@inside.ai"],
+  },
+  {
+    id: "shelf-watcher-1",
+    title: "棚ウォッチャー1",
+    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
+    icon: <ScanSearch className="h-6 w-6" />,
+    href: "/analyzeshelf1",
+    color: "bg-purple-500/10 text-purple-600",
+    allowedUsers: ["DIS@inside.ai"],
   },
   {
     id: "shelf-watcher",
@@ -310,11 +320,15 @@ export default function DashboardPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
           {DEMO_APPS.filter((app) => {
             const username = session.username || ""
-            // na21@inside.ai には allowedUsers に含まれているアプリだけ表示
+            // DIS@inside.ai は棚ウォッチャー0と棚ウォッチャー1だけ表示
+            if (username === "DIS@inside.ai") {
+              return app.allowedUsers?.includes(username)
+            }
+            // na21@inside.ai はallowedUsersに含まれているアプリだけ表示
             if (username === "na21@inside.ai") {
               return app.allowedUsers?.includes(username)
             }
-            // 他のユーザーには全てのアプリを表示
+            // その他のユーザー（AIinsideユーザーを含む）には全てのアプリを表示
             return true
           }).map((app) => (
             <Card
@@ -455,7 +469,7 @@ export default function DashboardPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingAgent ? "エージェントを編集" : "エージェントを登録"}</DialogTitle>
+            <DialogTitle>{editingAgent ? "エージェントを編集" : "エージェン���を登録"}</DialogTitle>
             <DialogDescription>
               AIエージェントの情報を入力してください
             </DialogDescription>
