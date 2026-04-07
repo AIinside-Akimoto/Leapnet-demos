@@ -88,6 +88,7 @@ const DEMO_APPS: DemoApp[] = [
     icon: <ScanSearch className="h-6 w-6" />,
     href: "/analyzeshelf0",
     color: "bg-indigo-500/10 text-indigo-600",
+    allowedUsers: ["DIS@inside.ai"],
   },
   {
     id: "shelf-watcher-1",
@@ -96,6 +97,7 @@ const DEMO_APPS: DemoApp[] = [
     icon: <ScanSearch className="h-6 w-6" />,
     href: "/analyzeshelf1",
     color: "bg-purple-500/10 text-purple-600",
+    allowedUsers: ["DIS@inside.ai"],
   },
   {
     id: "shelf-watcher",
@@ -318,12 +320,12 @@ export default function DashboardPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
           {DEMO_APPS.filter((app) => {
             const username = session.username || ""
-            // na21@inside.ai には allowedUsers に含まれているアプリだけ表示
-            if (username === "na21@inside.ai") {
+            // DIS@inside.ai と na21@inside.ai は allowedUsers に含まれているアプリだけ表示
+            if (username === "DIS@inside.ai" || username === "na21@inside.ai") {
               return app.allowedUsers?.includes(username)
             }
-            // 他のユーザーには全てのアプリを表示
-            return true
+            // 他のユーザーには allowedUsers が設定されていないアプリだけ表示
+            return !app.allowedUsers
           }).map((app) => (
             <Card
               key={app.id}
