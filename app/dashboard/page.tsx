@@ -320,12 +320,16 @@ export default function DashboardPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
           {DEMO_APPS.filter((app) => {
             const username = session.username || ""
-            // DIS@inside.ai と na21@inside.ai は allowedUsers に含まれているアプリだけ表示
-            if (username === "DIS@inside.ai" || username === "na21@inside.ai") {
+            // DIS@inside.ai は棚ウォッチャー0と棚ウォッチャー1だけ表示
+            if (username === "DIS@inside.ai") {
               return app.allowedUsers?.includes(username)
             }
-            // 他のユーザーには allowedUsers が設定されていないアプリだけ表示
-            return !app.allowedUsers
+            // na21@inside.ai はallowedUsersに含まれているアプリだけ表示
+            if (username === "na21@inside.ai") {
+              return app.allowedUsers?.includes(username)
+            }
+            // その他のユーザー（AIinsideユーザーを含む）には全てのアプリを表示
+            return true
           }).map((app) => (
             <Card
               key={app.id}
