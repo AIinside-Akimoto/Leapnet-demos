@@ -90,6 +90,14 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-indigo-500/10 text-indigo-600",
   },
   {
+    id: "shelf-watcher-1",
+    title: "棚ウォッチャー1",
+    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
+    icon: <ScanSearch className="h-6 w-6" />,
+    href: "/analyzeshelf1",
+    color: "bg-purple-500/10 text-purple-600",
+  },
+  {
     id: "shelf-watcher",
     title: "棚ウォッチャー",
     description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
@@ -455,7 +463,7 @@ export default function DashboardPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingAgent ? "エージェントを編集" : "エージェントを登録"}</DialogTitle>
+            <DialogTitle>{editingAgent ? "エージェントを編集" : "エージェン���を登録"}</DialogTitle>
             <DialogDescription>
               AIエージェントの情報を入力してください
             </DialogDescription>
