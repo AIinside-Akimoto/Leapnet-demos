@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const data = JSON.parse(responseText)
+      console.log("[v0] API response data:", JSON.stringify(data, null, 2))
       return NextResponse.json(data)
     } catch {
       return NextResponse.json(
