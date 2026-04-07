@@ -399,13 +399,13 @@ export default function AnalyzeShelfPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg bg-red-500/10 p-3 text-center">
                       <p className="text-2xl font-bold text-red-600">
-                        {result.analysis_result.summary?.total_oos_items ?? 0}
+                        {result.analysis_result.items.filter(i => i.status === "OOS").length}
                       </p>
                       <p className="text-xs text-muted-foreground">欠品（OOS）</p>
                     </div>
                     <div className="rounded-lg bg-yellow-500/10 p-3 text-center">
                       <p className="text-2xl font-bold text-yellow-600">
-                        {result.analysis_result.summary?.total_replenish_items ?? 0}
+                        {result.analysis_result.items.filter(i => i.status === "LOW_STOCK").length}
                       </p>
                       <p className="text-xs text-muted-foreground">補充推奨（LOW_STOCK）</p>
                     </div>
