@@ -39,16 +39,19 @@ export async function POST(request: NextRequest) {
     // Get form data from request
     const formData = await request.formData()
     const imageFile = formData.get("image") as File | null
+    const storeId = formData.get("store_id") as string
     const shelfId = formData.get("shelf_id") as string
     
     if (!imageFile) {
       return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
     }
 
-    // Create new FormData for external API
+    // Create new FormData for external API with correct parameter names
     const externalFormData = new FormData()
-    externalFormData.append("image", imageFile)
+    externalFormData.append("image_data", imageFile)
+    externalFormData.append("store_id", storeId || "store-001")
     externalFormData.append("shelf_id", shelfId || "shelf-001")
+    externalFormData.append("timestamp", new Date().toISOString())
     
     // Forward the request to the external API
     const response = await fetch(`${apiUrl}/agent`, {
@@ -70,7 +73,6 @@ export async function POST(request: NextRequest) {
 
     try {
       const data = JSON.parse(responseText)
-      console.log("[v0] API response data:", JSON.stringify(data, null, 2))
       return NextResponse.json(data)
     } catch {
       return NextResponse.json(
