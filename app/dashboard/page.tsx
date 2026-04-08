@@ -366,8 +366,8 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Agent Library Section - hidden for na21@inside.ai */}
-        {session.username !== "na21@inside.ai" && (
+        {/* Agent Library Section - hidden for na21@inside.ai and DIS@inside.ai */}
+        {session.username !== "na21@inside.ai" && session.username !== "DIS@inside.ai" && (
           <>
             <div className="mt-16 mb-8">
               <div className="flex items-center justify-between">
