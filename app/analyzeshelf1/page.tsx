@@ -100,9 +100,16 @@ export default function AnalyzeShelfPage() {
       const labelPadding = Math.round(4 * renderScale)
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
-      // Draw empty space boxes for each item (OOS first, then LOW_STOCK)
-      const sortedItems = [...result.analysis_result.items]
-        .sort((a, b) => (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1))
+      // Draw empty space boxes for each item (OOS first, then LOW_STOCK, then by row, then by position)
+      const positionOrder: Record<string, number> = { Left: 0, Center: 1, Right: 2 }
+      const sortItems = (items: AnalysisItem[]) => [...items].sort((a, b) => {
+        const statusDiff = (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1)
+        if (statusDiff !== 0) return statusDiff
+        const rowDiff = (a.location?.row ?? 0) - (b.location?.row ?? 0)
+        if (rowDiff !== 0) return rowDiff
+        return (positionOrder[a.location?.position ?? ""] ?? 0) - (positionOrder[b.location?.position ?? ""] ?? 0)
+      })
+      const sortedItems = sortItems(result.analysis_result.items)
       sortedItems.forEach((item, index) => {
         const box = item.front_face_gap
         if (!box) return
@@ -211,7 +218,7 @@ export default function AnalyzeShelfPage() {
 
   async function handleSubmit() {
     if (!selectedFile) {
-      setError("画像ファイルを選択してください")
+      setError("画像ファイルを���択してください")
       return
     }
 
@@ -429,8 +436,7 @@ export default function AnalyzeShelfPage() {
 
                   {/* Items List */}
                   <div className="space-y-2">
-                    {[...result.analysis_result.items]
-                      .sort((a, b) => (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1))
+                    {sortItems(result.analysis_result.items)
                       .map((item, index) => {
                       const isOOS = item.status === "OOS"
                       return (
