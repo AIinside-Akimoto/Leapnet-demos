@@ -198,23 +198,17 @@ export default function AnalyzeShelfPage() {
         abortControllerRef.current.abort()
         abortControllerRef.current = null
       }
-      setIsLoading(true)
-      try {
-        const compressedFile = await compressImage(file)
-        // Get the actual pixel dimensions of the compressed image
-        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-          const img = new Image()
-          img.onload = () => resolve({ width: img.width, height: img.height })
-          img.src = URL.createObjectURL(compressedFile)
-        })
-        setSelectedFile(compressedFile)
-        setPreviewUrl(URL.createObjectURL(compressedFile))
-        setImageDimensions(dimensions)
-        setResult(null)
-        setError(null)
-      } finally {
-        setIsLoading(false)
-      }
+      // Get the actual pixel dimensions of the original image (no compression)
+      const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+        const img = new Image()
+        img.onload = () => resolve({ width: img.width, height: img.height })
+        img.src = URL.createObjectURL(file)
+      })
+      setSelectedFile(file)
+      setPreviewUrl(URL.createObjectURL(file))
+      setImageDimensions(dimensions)
+      setResult(null)
+      setError(null)
     }
   }
 
