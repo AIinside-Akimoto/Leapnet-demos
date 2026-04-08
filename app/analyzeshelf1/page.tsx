@@ -64,6 +64,7 @@ export default function AnalyzeShelfPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [elapsedTime, setElapsedTime] = useState<number | null>(null)
 
   useEffect(() => {
     if (!sessionLoading && !session?.authenticated) {
@@ -99,8 +100,10 @@ export default function AnalyzeShelfPage() {
       const labelPadding = Math.round(4 * renderScale)
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
-      // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item, index) => {
+      // Draw empty space boxes for each item (OOS first, then LOW_STOCK)
+      const sortedItems = [...result.analysis_result.items]
+        .sort((a, b) => (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1))
+      sortedItems.forEach((item, index) => {
         const box = item.front_face_gap
         if (!box) return
         
@@ -222,6 +225,9 @@ export default function AnalyzeShelfPage() {
     setIsLoading(true)
     setError(null)
     setResult(null)
+    setElapsedTime(null)
+
+    const startTime = performance.now()
 
     try {
       const formData = new FormData()
@@ -236,6 +242,9 @@ export default function AnalyzeShelfPage() {
       })
 
       const responseText = await response.text()
+      
+      const endTime = performance.now()
+      setElapsedTime(Math.round((endTime - startTime) / 10) / 100)
       
       let data
       try {
@@ -389,7 +398,14 @@ export default function AnalyzeShelfPage() {
           {/* Results Section */}
           <Card>
             <CardHeader>
-              <CardTitle>分析結果</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>分析結果</span>
+                {elapsedTime !== null && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    API処理時間: {elapsedTime.toFixed(2)}秒
+                  </span>
+                )}
+              </CardTitle>
               <CardDescription>検出された空きスペース（欠品箇所）</CardDescription>
             </CardHeader>
             <CardContent>
@@ -413,7 +429,9 @@ export default function AnalyzeShelfPage() {
 
                   {/* Items List */}
                   <div className="space-y-2">
-                    {result.analysis_result.items.map((item, index) => {
+                    {[...result.analysis_result.items]
+                      .sort((a, b) => (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1))
+                      .map((item, index) => {
                       const isOOS = item.status === "OOS"
                       return (
                         <div
