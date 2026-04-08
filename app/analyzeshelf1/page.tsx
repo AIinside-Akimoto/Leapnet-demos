@@ -66,6 +66,16 @@ export default function AnalyzeShelfPage() {
   const [error, setError] = useState<string | null>(null)
   const [elapsedTime, setElapsedTime] = useState<number | null>(null)
 
+  // Sort items: OOS first, then by row, then by position (Left -> Center -> Right)
+  const positionOrder: Record<string, number> = { Left: 0, Center: 1, Right: 2 }
+  const sortItems = (items: AnalysisItem[]) => [...items].sort((a, b) => {
+    const statusDiff = (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1)
+    if (statusDiff !== 0) return statusDiff
+    const rowDiff = (a.location?.row ?? 0) - (b.location?.row ?? 0)
+    if (rowDiff !== 0) return rowDiff
+    return (positionOrder[a.location?.position ?? ""] ?? 0) - (positionOrder[b.location?.position ?? ""] ?? 0)
+  })
+
   useEffect(() => {
     if (!sessionLoading && !session?.authenticated) {
       router.push("/")
@@ -100,15 +110,7 @@ export default function AnalyzeShelfPage() {
       const labelPadding = Math.round(4 * renderScale)
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
-      // Draw empty space boxes for each item (OOS first, then LOW_STOCK, then by row, then by position)
-      const positionOrder: Record<string, number> = { Left: 0, Center: 1, Right: 2 }
-      const sortItems = (items: AnalysisItem[]) => [...items].sort((a, b) => {
-        const statusDiff = (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1)
-        if (statusDiff !== 0) return statusDiff
-        const rowDiff = (a.location?.row ?? 0) - (b.location?.row ?? 0)
-        if (rowDiff !== 0) return rowDiff
-        return (positionOrder[a.location?.position ?? ""] ?? 0) - (positionOrder[b.location?.position ?? ""] ?? 0)
-      })
+      // Draw empty space boxes for each item (OOS first, then by row, then by position)
       const sortedItems = sortItems(result.analysis_result.items)
       sortedItems.forEach((item, index) => {
         const box = item.front_face_gap
