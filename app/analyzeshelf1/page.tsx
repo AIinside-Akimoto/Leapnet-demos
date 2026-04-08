@@ -100,8 +100,10 @@ export default function AnalyzeShelfPage() {
       const labelPadding = Math.round(4 * renderScale)
       const lineWidth = Math.max(1, Math.round(2 * renderScale))
       
-      // Draw empty space boxes for each item (coordinates are in pixels)
-      result.analysis_result.items.forEach((item, index) => {
+      // Draw empty space boxes for each item (OOS first, then LOW_STOCK)
+      const sortedItems = [...result.analysis_result.items]
+        .sort((a, b) => (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1))
+      sortedItems.forEach((item, index) => {
         const box = item.front_face_gap
         if (!box) return
         
