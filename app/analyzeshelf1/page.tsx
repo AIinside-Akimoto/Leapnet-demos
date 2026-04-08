@@ -427,7 +427,9 @@ export default function AnalyzeShelfPage() {
 
                   {/* Items List */}
                   <div className="space-y-2">
-                    {result.analysis_result.items.map((item, index) => {
+                    {[...result.analysis_result.items]
+                      .sort((a, b) => (a.status === "OOS" ? 0 : 1) - (b.status === "OOS" ? 0 : 1))
+                      .map((item, index) => {
                       const isOOS = item.status === "OOS"
                       return (
                         <div
