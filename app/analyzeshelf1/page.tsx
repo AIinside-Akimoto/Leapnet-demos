@@ -400,7 +400,7 @@ export default function AnalyzeShelfPage() {
                 <span>分析結果</span>
                 {elapsedTime !== null && (
                   <span className="text-sm font-normal text-muted-foreground">
-                    処理時間: {elapsedTime.toFixed(2)}秒
+                    API処理時間: {elapsedTime.toFixed(2)}秒
                   </span>
                 )}
               </CardTitle>
