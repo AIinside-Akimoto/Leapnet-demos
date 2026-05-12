@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "セッションが無効です" }, { status: 401 })
     }
 
-    const apiUrl = process.env.SHELF_ANALYZER_API_URL0
-    const apiKey = process.env.SHELF_ANALYZER_API_KEY0
+    const apiUrl = process.env.CAD_CONVERTER_API_URL
+    const apiKey = process.env.CAD_CONVERTER_API_KEY
 
     if (!apiUrl || !apiKey) {
       return NextResponse.json(
@@ -38,24 +38,24 @@ export async function POST(request: NextRequest) {
 
     // Get form data from request
     const formData = await request.formData()
-    const imageFile = formData.get("image") as File | null
-    const storeId = formData.get("store_id") as string
-    const shelfId = formData.get("shelf_id") as string
-    const timestamp = formData.get("timestamp") as string
+    const file = formData.get("file") as File | null
+    const floor = formData.get("floor") as string | null
     
-    if (!imageFile) {
-      return NextResponse.json({ error: "画像ファイルが必要です" }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ error: "ファイルが必要です" }, { status: 400 })
+    }
+    
+    if (!floor) {
+      return NextResponse.json({ error: "階数の指定が必要です" }, { status: 400 })
     }
 
-    // Create new FormData for external API with all required fields
+    // Create new FormData for external API
     const externalFormData = new FormData()
-    externalFormData.append("image_file", imageFile)
-    externalFormData.append("store_id", storeId || "store-001")
-    externalFormData.append("shelf_id", shelfId || "shelf-001")
-    externalFormData.append("timestamp", timestamp || new Date().toISOString())
+    externalFormData.append("file", file)
+    externalFormData.append("floor", floor)
     
     // Forward the request to the external API
-    const response = await fetch(`${apiUrl}/agent`, {
+    const response = await fetch(`${apiUrl}/convert-pdf-to-cad-json`, {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     return NextResponse.json(
-      { error: "棚分析処理中にエラーが発生しました" },
+      { error: "CAD JSON変換中にエラーが発生しました" },
       { status: 500 }
     )
   }

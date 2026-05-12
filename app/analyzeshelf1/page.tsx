@@ -299,7 +299,7 @@ export default function AnalyzeShelfPage() {
               ダッシュボードに戻る
             </Button>
           </div>
-          <h1 className="text-lg font-semibold text-foreground">棚ウォッチャー1</h1>
+          <h1 className="text-lg font-semibold text-foreground">棚ウォッチャー</h1>
           <div className="w-[180px]" />
         </div>
       </header>

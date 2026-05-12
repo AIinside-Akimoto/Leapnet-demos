@@ -17,7 +17,8 @@ import {
   Trash2,
   X,
   ScanSearch,
-  FileText
+  FileText,
+  Building
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -82,38 +83,13 @@ const DEMO_APPS: DemoApp[] = [
     color: "bg-amber-500/10 text-amber-600",
   },
   {
-    id: "shelf-watcher-0",
-    title: "棚ウォッチャー0",
-    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
-    icon: <ScanSearch className="h-6 w-6" />,
-    href: "/analyzeshelf0",
-    color: "bg-indigo-500/10 text-indigo-600",
-    allowedUsers: ["DIS@inside.ai"],
-  },
-  {
-    id: "shelf-watcher-1",
-    title: "棚ウォッチャー1",
+    id: "shelf-watcher",
+    title: "棚ウォッチャー",
     description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
     icon: <ScanSearch className="h-6 w-6" />,
     href: "/analyzeshelf1",
     color: "bg-purple-500/10 text-purple-600",
     allowedUsers: ["DIS@inside.ai"],
-  },
-  {
-    id: "shelf-watcher",
-    title: "棚ウォッチャー",
-    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
-    icon: <ScanSearch className="h-6 w-6" />,
-    href: "/analyzeshelf",
-    color: "bg-sky-500/10 text-sky-600",
-  },
-  {
-    id: "shelf-watcher-2",
-    title: "棚ウォッチャー2",
-    description: "棚画像をAIで分析し、欠品や補充が必要な商品を自動検出します",
-    icon: <ScanSearch className="h-6 w-6" />,
-    href: "/analyzeshelf2",
-    color: "bg-teal-500/10 text-teal-600",
   },
   {
     id: "pdf-extractor",
@@ -123,6 +99,14 @@ const DEMO_APPS: DemoApp[] = [
     href: "/pdfcontentsextractor",
     color: "bg-orange-500/10 text-orange-600",
     allowedUsers: ["na21@inside.ai"],
+  },
+  {
+    id: "cad-converter",
+    title: "求積図変換",
+    description: "求積図PDFを解析し、各階のCAD用JSONデータに変換します",
+    icon: <Building className="h-6 w-6" />,
+    href: "/convert-pdf-to-cad-json",
+    color: "bg-cyan-500/10 text-cyan-600",
   },
 ]
 
