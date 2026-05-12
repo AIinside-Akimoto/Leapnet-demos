@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
 
     const apiUrl = process.env.FLOORLIST_EXTRACTOR_API_URL
     const apiKey = process.env.FLOORLIST_EXTRACTOR_API_KEY
+    
+    console.log("[v0] FLOORLIST_EXTRACTOR_API_URL:", apiUrl)
 
     if (!apiUrl || !apiKey) {
       return NextResponse.json(
