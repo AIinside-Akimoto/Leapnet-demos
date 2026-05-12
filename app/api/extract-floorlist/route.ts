@@ -29,8 +29,6 @@ export async function POST(request: NextRequest) {
     const apiUrl = process.env.FLOORLIST_EXTRACTOR_API_URL
     const apiKey = process.env.FLOORLIST_EXTRACTOR_API_KEY
     
-    console.log("[v0] FLOORLIST_EXTRACTOR_API_URL:", apiUrl)
-
     if (!apiUrl || !apiKey) {
       return NextResponse.json(
         { error: "API設定が不足しています" },
@@ -52,7 +50,6 @@ export async function POST(request: NextRequest) {
     
     // Forward the request to the external API
     const fullUrl = `${apiUrl.replace(/\/$/, "")}/extract-floorlist-from-pdf`
-    console.log("[v0] Calling floorlist API:", fullUrl)
     const response = await fetch(fullUrl, {
       method: "POST",
       headers: {
@@ -62,8 +59,6 @@ export async function POST(request: NextRequest) {
     })
 
     const responseText = await response.text()
-    console.log("[v0] Floorlist API response status:", response.status)
-    console.log("[v0] Floorlist API response body:", responseText.substring(0, 500))
 
     if (!response.ok) {
       return NextResponse.json(
