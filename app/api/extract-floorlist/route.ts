@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
     externalFormData.append("file", file)
     
     // Forward the request to the external API
-    const response = await fetch(`${apiUrl}/extract-floorlist-from-pdf`, {
+    const fullUrl = `${apiUrl.replace(/\/$/, "")}/extract-floorlist-from-pdf`
+    console.log("[v0] Calling floorlist API:", fullUrl)
+    const response = await fetch(fullUrl, {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
