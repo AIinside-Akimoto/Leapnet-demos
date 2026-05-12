@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
     })
 
     const responseText = await response.text()
+    console.log("[v0] Floorlist API response status:", response.status)
+    console.log("[v0] Floorlist API response body:", responseText.substring(0, 500))
 
     if (!response.ok) {
       return NextResponse.json(
