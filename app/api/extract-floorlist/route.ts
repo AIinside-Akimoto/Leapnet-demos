@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "セッションが無効です" }, { status: 401 })
     }
 
-    const apiUrl = process.env.CAD_CONVERTER_API_URL
-    const apiKey = process.env.CAD_CONVERTER_API_KEY
+    const apiUrl = process.env.FLOORLIST_EXTRACTOR_API_URL
+    const apiKey = process.env.FLOORLIST_EXTRACTOR_API_KEY
 
     if (!apiUrl || !apiKey) {
       return NextResponse.json(
