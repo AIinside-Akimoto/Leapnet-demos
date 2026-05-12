@@ -122,12 +122,12 @@ export default function ConvertPdfToCadJsonPage() {
     const startTime = performance.now()
 
     try {
-      // Call through server-side proxy
+      // Call through Railway proxy to avoid Vercel 60s timeout
       const formData = new FormData()
       formData.append("file", selectedFile)
       formData.append("floor", floor)
 
-      const response = await authFetch("/api/convert-pdf-to-cad-json", {
+      const response = await fetch("https://cad-proxy-production.up.railway.app/convert", {
         method: "POST",
         body: formData,
       })
