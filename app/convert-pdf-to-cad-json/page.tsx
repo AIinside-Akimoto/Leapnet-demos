@@ -236,7 +236,7 @@ export default function ConvertPdfToCadJsonPage() {
         <div className="mx-auto max-w-4xl space-y-6">
           {/* Description */}
           <p className="text-muted-foreground">
-            求積図PDFをアップロードして、各階のCAD用JSONデータに変���します
+            求積図PDFをアップロードして、各階のCAD用JSONデータに変換します
           </p>
 
           {/* File Upload */}
