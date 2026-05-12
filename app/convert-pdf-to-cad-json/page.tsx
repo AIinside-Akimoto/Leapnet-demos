@@ -122,12 +122,19 @@ export default function ConvertPdfToCadJsonPage() {
     const startTime = performance.now()
 
     try {
+      // Get proxy URL from server config
+      const configResponse = await authFetch("/api/cad-proxy-config")
+      if (!configResponse.ok) {
+        throw new Error("プロキシ設定の取得に失敗しました")
+      }
+      const { proxyUrl } = await configResponse.json()
+
       // Call through Railway proxy to avoid Vercel 60s timeout
       const formData = new FormData()
       formData.append("file", selectedFile)
       formData.append("floor", floor)
 
-      const response = await fetch("https://cad-proxy-production.up.railway.app/convert", {
+      const response = await fetch(`${proxyUrl.replace(/\/$/, "")}/convert`, {
         method: "POST",
         body: formData,
       })
