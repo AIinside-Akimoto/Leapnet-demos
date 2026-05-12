@@ -122,9 +122,7 @@ export default function PdfContentsExtractorPage() {
         signal,
       })
 
-      console.log("[v0] Response status:", response.status)
       const responseText = await response.text()
-      console.log("[v0] Response text:", responseText.substring(0, 500))
 
       if (!response.ok) {
         throw new Error(`APIエラー: ${response.status} - ${responseText}`)

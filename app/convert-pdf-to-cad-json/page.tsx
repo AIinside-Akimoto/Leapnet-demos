@@ -58,8 +58,8 @@ export default function ConvertPdfToCadJsonPage() {
     }
   }
 
-  async function extractFloorList() {
-    if (!selectedFile) return
+  async function extractFloorList(): Promise<string[] | null> {
+    if (!selectedFile) return null
 
     setIsExtractingFloors(true)
     setError(null)
@@ -97,16 +97,17 @@ export default function ConvertPdfToCadJsonPage() {
 
       if (data.floors && Array.isArray(data.floors)) {
         setFloors(data.floors)
-        // Initialize floor results
         setFloorResults(data.floors.map((floor: string) => ({
           floor,
           status: "pending" as const,
         })))
+        return data.floors
       } else {
         throw new Error("階数リストが見つかりませんでした")
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました")
+      return null
     } finally {
       setIsExtractingFloors(false)
     }
@@ -174,19 +175,28 @@ export default function ConvertPdfToCadJsonPage() {
     }
   }
 
-  async function startConversion() {
-    if (floors.length === 0) return
+  async function startConversion(floorList?: string[]) {
+    const targetFloors = floorList ?? floors
+    if (targetFloors.length === 0) return
 
     setIsLoading(true)
     setProgress(0)
 
     // Process floors sequentially
-    for (let i = 0; i < floors.length; i++) {
-      await convertFloor(floors[i], i)
-      setProgress(Math.round(((i + 1) / floors.length) * 100))
+    for (let i = 0; i < targetFloors.length; i++) {
+      await convertFloor(targetFloors[i], i)
+      setProgress(Math.round(((i + 1) / targetFloors.length) * 100))
     }
 
     setIsLoading(false)
+  }
+
+  async function runAll() {
+    if (!selectedFile) return
+    const extractedFloors = await extractFloorList()
+    if (extractedFloors && extractedFloors.length > 0) {
+      await startConversion(extractedFloors)
+    }
   }
 
   function handleCopy(index: number, text: string) {
@@ -276,7 +286,7 @@ export default function ConvertPdfToCadJsonPage() {
               )}
 
               <Button
-                onClick={extractFloorList}
+                onClick={runAll}
                 disabled={!selectedFile || isExtractingFloors || isLoading}
                 className="w-full"
               >
@@ -285,8 +295,13 @@ export default function ConvertPdfToCadJsonPage() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     階数リストを抽出中...
                   </>
+                ) : isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    変換中... ({completedCount + errorCount}/{floors.length})
+                  </>
                 ) : (
-                  "1. 階数リストを抽出"
+                  "変換実行"
                 )}
               </Button>
             </CardContent>
@@ -337,21 +352,6 @@ export default function ConvertPdfToCadJsonPage() {
                   })}
                 </div>
 
-                <Button
-                  onClick={startConversion}
-                  disabled={isLoading || isExtractingFloors}
-                  className="w-full"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      変換中... ({completedCount + errorCount}/{floors.length})
-                    </>
-                  ) : (
-                    "2. 各階のCAD JSONに変換"
-                  )}
-                </Button>
-
                 {isLoading && (
                   <Progress value={progress} className="w-full" />
                 )}
@@ -368,55 +368,60 @@ export default function ConvertPdfToCadJsonPage() {
                   完了: {completedCount} / エラー: {errorCount} / 合計: {floors.length}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {floorResults.map((result, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={result.status === "completed" ? "default" : result.status === "error" ? "destructive" : "outline"}>
-                          {result.floor}階
-                        </Badge>
-                        {result.elapsedTime !== null && result.status === "completed" && (
-                          <span className="text-xs text-muted-foreground">
-                            {result.elapsedTime.toFixed(2)}秒
-                          </span>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <div className="flex gap-4" style={{ minWidth: "max-content" }}>
+                    {floorResults.map((result, index) => (
+                      <div key={index} className="flex flex-col gap-2" style={{ width: "360px", minWidth: "360px" }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={result.status === "completed" ? "default" : result.status === "error" ? "destructive" : "outline"}>
+                              {result.floor}階
+                            </Badge>
+                            {result.elapsedTime != null && result.status === "completed" && (
+                              <span className="text-xs text-muted-foreground">
+                                {result.elapsedTime.toFixed(2)}秒
+                              </span>
+                            )}
+                          </div>
+                          {result.status === "completed" && result.result && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopy(index, result.result!)}
+                            >
+                              {copiedIndex === index ? (
+                                <>
+                                  <Check className="mr-1 h-3 w-3" />
+                                  コピー済み
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="mr-1 h-3 w-3" />
+                                  コピー
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                        {result.status === "completed" && result.result && (
+                          <Textarea
+                            value={result.result}
+                            readOnly
+                            className="font-mono text-xs"
+                            style={{ minHeight: "400px", resize: "vertical" }}
+                          />
+                        )}
+                        {result.status === "error" && result.error && (
+                          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-sm">{result.error}</span>
+                          </div>
                         )}
                       </div>
-                      {result.status === "completed" && result.result && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCopy(index, result.result!)}
-                        >
-                          {copiedIndex === index ? (
-                            <>
-                              <Check className="mr-1 h-3 w-3" />
-                              コピー済み
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="mr-1 h-3 w-3" />
-                              コピー
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                    {result.status === "completed" && result.result && (
-                      <Textarea
-                        value={result.result}
-                        readOnly
-                        className="min-h-[200px] font-mono text-xs"
-                      />
-                    )}
-                    {result.status === "error" && result.error && (
-                      <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm">{result.error}</span>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                </div>
               </CardContent>
             </Card>
           )}
