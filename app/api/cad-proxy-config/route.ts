@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server"
-import { verifySession } from "@/lib/auth"
+import { NextRequest, NextResponse } from "next/server"
+import { getSession } from "@/lib/auth"
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   // Verify authentication
-  const session = await verifySession(request)
+  const session = await getSession(request)
   if (!session) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 })
   }
