@@ -122,23 +122,13 @@ export default function ConvertPdfToCadJsonPage() {
     const startTime = performance.now()
 
     try {
-      // Fetch API config (URL + key) from server
-      const configResponse = await authFetch("/api/cad-converter-config")
-      if (!configResponse.ok) {
-        throw new Error("API設定の取得に失敗しました")
-      }
-      const { apiUrl, apiKey } = await configResponse.json()
-
-      // Call external API directly from browser to avoid Vercel timeout
+      // Call through Railway proxy to avoid Vercel 60s timeout
       const formData = new FormData()
       formData.append("file", selectedFile)
       formData.append("floor", floor)
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch("https://cad-proxy-production.up.railway.app/convert", {
         method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-        },
         body: formData,
       })
 
@@ -229,7 +219,7 @@ export default function ConvertPdfToCadJsonPage() {
         <div className="mx-auto max-w-4xl space-y-6">
           {/* Description */}
           <p className="text-muted-foreground">
-            求積図PDFをアップロードして、各階のCAD用JSONデータに変換します
+            求積図PDFをアップロードして、各階のCAD用JSONデータに変���します
           </p>
 
           {/* File Upload */}
