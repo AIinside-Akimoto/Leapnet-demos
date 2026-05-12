@@ -17,7 +17,8 @@ import {
   Trash2,
   X,
   ScanSearch,
-  FileText
+  FileText,
+  Building
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -98,6 +99,14 @@ const DEMO_APPS: DemoApp[] = [
     href: "/pdfcontentsextractor",
     color: "bg-orange-500/10 text-orange-600",
     allowedUsers: ["na21@inside.ai"],
+  },
+  {
+    id: "cad-converter",
+    title: "求積図変換",
+    description: "求積図PDFを解析し、各階のCAD用JSONデータに変換します",
+    icon: <Building className="h-6 w-6" />,
+    href: "/convert-pdf-to-cad-json",
+    color: "bg-cyan-500/10 text-cyan-600",
   },
 ]
 
