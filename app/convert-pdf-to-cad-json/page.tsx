@@ -232,8 +232,8 @@ export default function ConvertPdfToCadJsonPage() {
         </div>
       </header>
 
-      <main className="container py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
+      <main className="container max-w-none px-6 py-8">
+        <div className="space-y-6">
           {/* Description */}
           <p className="text-muted-foreground">
             求積図PDFをアップロードして、各階のCAD用JSONデータに変換します
@@ -369,58 +369,62 @@ export default function ConvertPdfToCadJsonPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <div className="flex gap-4" style={{ minWidth: "max-content" }}>
-                    {floorResults.map((result, index) => (
-                      <div key={index} className="flex flex-col gap-2" style={{ width: "360px", minWidth: "360px" }}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant={result.status === "completed" ? "default" : result.status === "error" ? "destructive" : "outline"}>
-                              {result.floor}階
-                            </Badge>
-                            {result.elapsedTime != null && result.status === "completed" && (
-                              <span className="text-xs text-muted-foreground">
-                                {result.elapsedTime.toFixed(2)}秒
-                              </span>
-                            )}
-                          </div>
-                          {result.status === "completed" && result.result && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopy(index, result.result!)}
-                            >
-                              {copiedIndex === index ? (
-                                <>
-                                  <Check className="mr-1 h-3 w-3" />
-                                  コピー済み
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="mr-1 h-3 w-3" />
-                                  コピー
-                                </>
-                              )}
-                            </Button>
+                <div className="flex gap-4">
+                  {floorResults.map((result, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col gap-2 min-w-0"
+                      style={{ flex: `1 1 calc(${100 / floorResults.length}% - ${(floorResults.length - 1) * 16 / floorResults.length}px)` }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={result.status === "completed" ? "default" : result.status === "error" ? "destructive" : "outline"}>
+                            {result.floor}階
+                          </Badge>
+                          {result.elapsedTime != null && result.status === "completed" && (
+                            <span className="text-xs text-muted-foreground">
+                              {result.elapsedTime.toFixed(2)}秒
+                            </span>
                           )}
                         </div>
                         {result.status === "completed" && result.result && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopy(index, result.result!)}
+                          >
+                            {copiedIndex === index ? (
+                              <>
+                                <Check className="mr-1 h-3 w-3" />
+                                コピー済み
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="mr-1 h-3 w-3" />
+                                コピー
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      {result.status === "completed" && result.result && (
+                        <div className="overflow-x-auto">
                           <Textarea
                             value={result.result}
                             readOnly
-                            className="font-mono text-xs"
+                            className="font-mono text-xs w-full"
                             style={{ minHeight: "400px", resize: "vertical" }}
                           />
-                        )}
-                        {result.status === "error" && result.error && (
-                          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <span className="text-sm">{result.error}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      )}
+                      {result.status === "error" && result.error && (
+                        <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-sm">{result.error}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
