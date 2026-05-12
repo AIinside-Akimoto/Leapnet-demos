@@ -122,12 +122,23 @@ export default function ConvertPdfToCadJsonPage() {
     const startTime = performance.now()
 
     try {
+      // Fetch API config (URL + key) from server
+      const configResponse = await authFetch("/api/cad-converter-config")
+      if (!configResponse.ok) {
+        throw new Error("API設定の取得に失敗しました")
+      }
+      const { apiUrl, apiKey } = await configResponse.json()
+
+      // Call external API directly from browser to avoid Vercel timeout
       const formData = new FormData()
       formData.append("file", selectedFile)
       formData.append("floor", floor)
 
-      const response = await authFetch("/api/convert-pdf-to-cad-json", {
+      const response = await fetch(apiUrl, {
         method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+        },
         body: formData,
       })
 
