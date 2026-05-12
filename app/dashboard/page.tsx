@@ -107,6 +107,7 @@ const DEMO_APPS: DemoApp[] = [
     icon: <Building className="h-6 w-6" />,
     href: "/convert-pdf-to-cad-json",
     color: "bg-cyan-500/10 text-cyan-600",
+    allowedUsers: ["mtack@inside.ai"],
   },
 ]
 
@@ -304,12 +305,16 @@ export default function DashboardPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
           {DEMO_APPS.filter((app) => {
             const username = session.username || ""
-            // DIS@inside.ai は棚ウォッチャー0と棚ウォッチャー1だけ表示
+            // DIS@inside.ai は棚ウォッチャーだけ表示
             if (username === "DIS@inside.ai") {
               return app.allowedUsers?.includes(username)
             }
             // na21@inside.ai はallowedUsersに含まれているアプリだけ表示
             if (username === "na21@inside.ai") {
+              return app.allowedUsers?.includes(username)
+            }
+            // mtack@inside.ai は求積図変換だけ表示
+            if (username === "mtack@inside.ai") {
               return app.allowedUsers?.includes(username)
             }
             // その他のユーザー（AIinsideユーザーを含む）には全てのアプリを表示
@@ -350,8 +355,8 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Agent Library Section - hidden for na21@inside.ai and DIS@inside.ai */}
-        {session.username !== "na21@inside.ai" && session.username !== "DIS@inside.ai" && (
+        {/* Agent Library Section - hidden for na21@inside.ai, DIS@inside.ai, and mtack@inside.ai */}
+        {session.username !== "na21@inside.ai" && session.username !== "DIS@inside.ai" && session.username !== "mtack@inside.ai" && (
           <>
             <div className="mt-16 mb-8">
               <div className="flex items-center justify-between">
@@ -453,7 +458,7 @@ export default function DashboardPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingAgent ? "エージェントを編集" : "エージェン���を登録"}</DialogTitle>
+            <DialogTitle>{editingAgent ? "エージ��ントを編集" : "エージェン���を登録"}</DialogTitle>
             <DialogDescription>
               AIエージェントの情報を入力してください
             </DialogDescription>
