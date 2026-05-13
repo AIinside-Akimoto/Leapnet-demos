@@ -239,6 +239,7 @@ export default function AnalyzeShelfPage() {
         throw new Error("プロキシ設定の取得に失敗しました")
       }
       const { proxyUrl } = await configResponse.json()
+      console.log("[v0] Proxy URL:", proxyUrl)
 
       // Call through Railway proxy to avoid Vercel 60s timeout
       const formData = new FormData()

@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   }
 
   const proxyUrl = process.env.SHELF_PROXY_URL
+  console.log("[v0] SHELF_PROXY_URL:", proxyUrl)
 
   if (!proxyUrl) {
     return NextResponse.json(
