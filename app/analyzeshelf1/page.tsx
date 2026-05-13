@@ -233,12 +233,21 @@ export default function AnalyzeShelfPage() {
     const startTime = performance.now()
 
     try {
+      // Get proxy URL from server config
+      const configResponse = await authFetch("/api/shelf-proxy-config")
+      if (!configResponse.ok) {
+        throw new Error("プロキシ設定の取得に失敗しました")
+      }
+      const { proxyUrl } = await configResponse.json()
+
+      // Call through Railway proxy to avoid Vercel 60s timeout
       const formData = new FormData()
       formData.append("store_id", storeId)
       formData.append("shelf_id", shelfId)
       formData.append("image", selectedFile)
+      formData.append("timestamp", new Date().toISOString())
       
-      const response = await authFetch("/api/analyze_shelf1", {
+      const response = await fetch(`${proxyUrl.replace(/\/$/, "")}/analyze-shelf`, {
         method: "POST",
         body: formData,
         signal: abortController.signal,
