@@ -124,7 +124,7 @@ export default function ConvertPdfToCadJsonPage() {
 
     try {
       // Get proxy URL from server config
-      const configResponse = await authFetch("/api/cad-proxy-config")
+      const configResponse = await fetch("/api/cad-proxy-config")
       if (!configResponse.ok) {
         throw new Error("プロキシ設定の取得に失敗しました")
       }
